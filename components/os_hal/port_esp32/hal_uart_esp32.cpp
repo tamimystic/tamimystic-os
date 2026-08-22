@@ -1,6 +1,7 @@
 #include "os_hal_uart.h"
 #include "esp_log.h"
 #include <stdio.h>
+#include <cstring>
 
 static const char* TAG = "HAL_UART";
 
