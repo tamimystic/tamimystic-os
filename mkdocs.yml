@@ -1,0 +1,63 @@
+site_name: Tamimystic OS
+site_description: An Ultra Pro Max Edge & Robotics Operating System for ESP32-S3
+site_author: Tamimystic
+repo_url: https://github.com/tamimystic/tamimystic-os
+repo_name: tamimystic/tamimystic-os
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - First Boot & Config: getting-started/first-boot.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Core Scheduler: architecture/scheduler.md
+    - Universal HAL: architecture/hal.md
+  - Advanced Features:
+    - AI Engine (TFLite): features/ai-engine.md
+    - MicroPython Apps: features/micropython.md
+    - Robotics Control: features/robotics.md
+  - Development:
+    - Build from Source: development/build.md
+    - CI/CD Pipeline: development/cicd.md
