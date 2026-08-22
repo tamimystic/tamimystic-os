@@ -2,6 +2,7 @@
 #include "os_event_bus.h"
 #include "os_cli.h"
 #include "os_hal_uart.h"
+#include "os_config.h"
 #include <thread>
 #include <chrono>
 

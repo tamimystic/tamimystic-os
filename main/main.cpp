@@ -3,6 +3,7 @@
 #include "os_event_bus.h"
 #include "os_cli.h"
 #include "os_config.h"
+#include "os_scheduler.h"
 #include "os_network.h"
 #include "os_storage.h"
 #include "os_web.h"
@@ -20,26 +21,33 @@ void os_core_start() {
     // Initialize Event Bus
     EventBus::getInstance().init();
 
+    // Initialize Scheduler
+    OSScheduler::getInstance().init();
+
     // Initialize Config Manager (NVS)
     ConfigManager::getInstance().init();
 
     // Initialize Network Manager
     NetworkManager::getInstance().init();
 
-    // Initialize VFS / Storage Manager
+    // Initialize Storage (VFS)
     StorageManager::getInstance().init();
 
     // Initialize WASM App Manager
     AppManager::getInstance().init();
 
-    // Initialize Robotics Motor Driver
+    // Initialize Modules
     MotorDriver::getInstance().init();
-
-    // Initialize AI Module
     AIModule::getInstance().init();
 
-    // Initialize CLI Shell
-    CLI::getInstance().init();
+    // Background Task for System Heartbeat
+    OSScheduler::getInstance().createTask("sys_heartbeat", 2048, 1, CORE_0, []() {
+        while (true) {
+            // Check system health, wait 10 seconds
+            OSScheduler::getInstance().delay(10000);
+            hal_uart_print("[SYS] Heartbeat OK.\n");
+        }
+    });
 
     // Subscribe to network state events
     EventBus::getInstance().subscribe(EventTopic::NETWORK_STATE_CHANGE, [](const SystemEvent& evt) {
@@ -62,6 +70,9 @@ void os_core_start() {
 
     // Publish Boot Event
     EventBus::getInstance().publish(EventTopic::SYSTEM_BOOT);
+
+    // Start the CLI (blocking loop in native simulation)
+    CLI::getInstance().init();
 }
 
 #ifdef OS_TARGET_NATIVE

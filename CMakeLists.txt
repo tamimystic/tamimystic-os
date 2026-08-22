@@ -22,6 +22,7 @@ else()
     # Manually collect components for native build
     add_subdirectory(components/os_hal)
     add_subdirectory(components/os_core)
+    add_subdirectory(components/os_scheduler)
     add_subdirectory(components/os_cli)
     add_subdirectory(components/os_network)
     add_subdirectory(components/os_config)
