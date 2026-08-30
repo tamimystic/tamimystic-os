@@ -12,6 +12,8 @@ typedef enum {
 void hal_gpio_set_direction(int pin, hal_gpio_mode_t mode);
 void hal_gpio_set_level(int pin, int level);
 int hal_gpio_get_level(int pin);
+bool hal_gpio_is_valid(int pin);
+bool hal_gpio_is_safe_user_pin(int pin);
 
 #ifdef __cplusplus
 }

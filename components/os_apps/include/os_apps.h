@@ -1,5 +1,7 @@
 #pragma once
-#include <stdint.h>
+
+#include "os_python_runner.h"
+#include "os_wasm_runner.h"
 #include <string>
 
 namespace TamimysticOS {
@@ -8,18 +10,25 @@ class AppManager {
 public:
     static AppManager& getInstance();
 
-    // Initialize the Application Manager (and WASM runtime)
+    // Initialize App subsystem & check for autorun.py on boot
     void init();
 
-    // Execute a python or wasm script from the Virtual File System
-    bool executeScript(const std::string& filename);
+    // Run Python code string
+    ScriptExecutionResult evalCode(const std::string& code);
 
-    // Load and execute a WebAssembly application from a memory buffer
-    bool loadWasmApp(const std::string& app_name, const uint8_t* wasm_file_buf, uint32_t size);
+    // Run script file from LittleFS (e.g. "robot_patrol.py" or "app.wasm")
+    ScriptExecutionResult runFile(const std::string& filename);
+
+    // Stop current execution
+    void stopCurrentApp();
+
+    bool isRunning() const;
 
 private:
     AppManager() = default;
     ~AppManager() = default;
+
+    bool app_running = false;
 };
 
 } // namespace TamimysticOS

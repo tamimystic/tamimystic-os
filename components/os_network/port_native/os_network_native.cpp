@@ -24,7 +24,7 @@ NetworkState NetworkManager::getState() const {
 }
 
 void NetworkManager::init() {
-    hal_uart_print("[NET] Initializing Native Network Mock...\n");
+    hal_uart_print("[NET] Initializing Native Network Simulation...\n");
     
     // Register CLI Command
     CLI::getInstance().registerCommand("wifi", "Connect to Wi-Fi: wifi <ssid> <pass>", [](const std::vector<std::string>& args) {
@@ -34,6 +34,9 @@ void NetworkManager::init() {
         }
         NetworkManager::getInstance().connectWiFi(args[1], args[2]);
     });
+
+    // Auto-connect simulation network so Web Server is immediately accessible on http://localhost:8080
+    connectWiFi("Tamimystic-SimNet", "s3-n16r8");
 }
 
 void NetworkManager::connectWiFi(const std::string& ssid, const std::string& password) {

@@ -21,6 +21,22 @@ void hal_i2c_master_init(int sda_pin, int scl_pin, int clk_speed_hz) {
     i2c_driver_install(I2C_MASTER_PORT, conf.mode, 0, 0, 0);
 }
 
+void hal_i2c_deinit() {
+    i2c_driver_delete(I2C_MASTER_PORT);
+}
+
+bool hal_i2c_probe(uint8_t dev_addr) {
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (dev_addr << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_stop(cmd);
+    
+    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_PORT, cmd, 50 / portTICK_PERIOD_MS);
+    i2c_cmd_link_delete(cmd);
+    
+    return ret == ESP_OK;
+}
+
 bool hal_i2c_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, size_t len) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -53,6 +69,14 @@ bool hal_i2c_write(uint8_t dev_addr, uint8_t reg_addr, const uint8_t *data, size
     i2c_cmd_link_delete(cmd);
     
     return ret == ESP_OK;
+}
+
+bool hal_i2c_read_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t *val) {
+    return hal_i2c_read(dev_addr, reg_addr, val, 1);
+}
+
+bool hal_i2c_write_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t val) {
+    return hal_i2c_write(dev_addr, reg_addr, &val, 1);
 }
 
 }

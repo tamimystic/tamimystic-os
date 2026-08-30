@@ -8,6 +8,9 @@ namespace TamimysticOS {
 enum class EventTopic {
     SYSTEM_BOOT,
     NETWORK_STATE_CHANGE,
+    DEVICE_CONNECTED,
+    DEVICE_DISCONNECTED,
+    PIN_CONFIG_CHANGED,
     ROBOTICS_FAULT,
     CUSTOM_APP_EVENT,
     MAX_TOPICS
