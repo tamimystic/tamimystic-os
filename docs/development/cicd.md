@@ -1,15 +1,37 @@
-# Continuous Integration and Deployment
+# 🚀 CI/CD Pipeline & GitHub Actions Automation
 
-Tamimystic OS enforces strict CI/CD pipelines to guarantee software stability. All code pushed to the repository is subject to automated verification.
+Tamimystic OS utilizes automated GitHub Actions workflows to continuously compile firmware binaries, run tests, and publish live documentation.
 
-## GitHub Actions Workflow
+---
 
-The primary pipeline is defined in `.github/workflows/build.yml`.
+## 🔄 Automated Workflows
 
-1.  **Trigger**: The workflow executes on every push to the `main` branch or any Pull Request.
-2.  **Environment Provisioning**: A fresh Ubuntu environment is provisioned, and the official `espressif/esp-idf-ci-action` container is initialized.
-3.  **Compilation Verification**: The entire operating system is cross-compiled for the ESP32-S3 target. Any compilation errors, syntax faults, or strict warning violations (`-Werror`) will immediately fail the build.
-4.  **Artifact Generation**: Upon successful compilation, the workflow extracts the critical `.bin` files (`bootloader.bin`, `partition-table.bin`, `tamimystic_os.bin`) and archives them.
-5.  **Distribution**: The generated zip artifact is securely uploaded to the GitHub Actions run page, making it immediately available for end-users to download and deploy.
+```mermaid
+graph TD
+    PUSH["Git Push to main branch"] --> WF1["1. Tamimystic OS ESP32 Build (.github/workflows/build.yml)"]
+    PUSH --> WF2["2. Deploy MkDocs Documentation (.github/workflows/docs.yml)"]
+    
+    WF1 --> ART["Build Firmware Artifacts: tamimystic_os.bin, bootloader.bin, partition-table.bin"]
+    WF2 --> PAGES["Publish to GitHub Pages: https://tamimystic.github.io/tamimystic-os/"]
+```
 
-This automated pipeline ensures that the `main` branch always represents a verified, functional state of the operating system.
+---
+
+## 📦 Automated Artifacts
+
+Every push or pull request to the `main` branch produces downloadable binary build artifacts attached directly to the GitHub Actions run:
+
+1. `tamimystic_os.bin` (Main Operating System binary)
+2. `bootloader.bin` (ESP32-S3 secondary bootloader)
+3. `partition-table.bin` (16MB partition map)
+4. `tamimystic_os.elf` (Debug symbols for GDB debugging and core-dump analysis)
+
+---
+
+## 🌐 Live Documentation Deployment
+
+Whenever files in the `docs/` folder or `mkdocs.yml` are modified:
+1. GitHub Actions triggers `Deploy MkDocs Documentation`.
+2. Material for MkDocs builds the static HTML site.
+3. The generated site is automatically deployed to the `gh-pages` branch and served globally at:
+   👉 **[https://tamimystic.github.io/tamimystic-os/](https://tamimystic.github.io/tamimystic-os/)**

@@ -1,26 +1,119 @@
-# First Boot and Configuration
+# ⚡ First Boot & Web Dashboard Walkthrough
 
-Upon receiving a hard reset after flashing, Tamimystic OS initiates its primary boot sequence. This document details the expected behavior and configuration steps required to bring the system online.
+Once flashing is complete, Tamimystic OS starts immediately upon reboot. This guide explains what happens during boot, how to connect to the serial console, and how to access the Glassmorphism Web Dashboard.
 
-## Initialization Sequence
+---
 
-When the device powers on, the following sequence occurs internally:
-1.  **Hardware Verification**: The OS validates the presence and integrity of the 8MB PSRAM and 16MB Flash memory.
-2.  **Virtual File System (VFS) Mounting**: The SPIFFS partition is mounted. If this is the first boot, the OS automatically formats the partition.
-3.  **Non-Volatile Storage (NVS) Loading**: The OS reads the `os_config` registry to determine network states and peripheral bindings.
-4.  **Network Initialization**: If no valid Wi-Fi credentials exist in the NVS, the OS defaults to Access Point (AP) mode.
+## 📟 1. Serial Monitor Output (@ 115200 Baud)
 
-## Accessing the Configuration Dashboard
+Open your favorite serial terminal (e.g., PuTTY, Arduino Serial Monitor, `idf.py monitor`, or VS Code Serial Monitor) and configure it to:
+* **Baud Rate**: `115200`
+* **Data Bits**: `8`
+* **Parity**: `None`
+* **Stop Bits**: `1`
 
-1.  Open the Wi-Fi settings on your host machine (PC or Smartphone).
-2.  Scan for a network SSID named **TamimysticOS_Setup** (or similar fallback SSID).
-3.  Connect to the network.
-4.  Open a modern web browser and navigate to the default gateway IP address (typically `http://192.168.4.1`).
+You will see the official Tamimystic OS boot banner:
 
-## Network and Peripheral Configuration
+```text
+=======================================================
+       TAMIMYSTIC OS - ESP32-S3 ULTRA PRO MAX          
+=======================================================
+[BOOT] Starting system bring-up sequence...
+[EVENT] Event Bus initialized.
+[SCHEDULER] Initializing FreeRTOS Scheduler (ESP32)...
+[CONFIG] Initializing NVS (Non-Volatile Storage)...
+[PNP] Initializing Plug & Play Hardware Engine...
+[PIN_MATRIX] Initialized with persistent NVS backing.
+[HAL_I2C] Master bus initialized on SDA=21, SCL=22 @ 400kHz.
 
-The Web Dashboard serves as the primary interface for system configuration.
+=======================================================
+  [PNP] Scanning I2C Bus (Addresses 0x08 - 0x77)...
+=======================================================
+  [+ FOUND] 0x68 | MPU-6050 [IMU / Motion] Signature Match!
+  [+ FOUND] 0x29 | VL53L0X [Distance / ToF] Signature Match!
+  [+ FOUND] 0x3C | SSD1306 [Display / OLED] Signature Match!
+  [+ FOUND] 0x40 | PCA9685 [Actuator Expander] Signature Match!
+=======================================================
+  [PNP] Scan complete. 4 hardware devices auto-configured.
+=======================================================
 
-*   **Station Mode Setup**: Enter your local router's SSID and Password to transition the device from AP mode to Station mode. Upon saving, the OS will attempt to connect to the provided network and assign itself a local IP via DHCP.
-*   **Hardware Routing**: Navigate to the peripherals tab. Here, you can map physical ESP32-S3 pins to logical OS functions. For example, you can map Pin 18 and 19 to `MotorDriver_Left`. The OS writes this mapping to NVS, ensuring it persists across reboots.
-*   **Application Uploads**: Use the Over-The-Air (OTA) file manager to upload your Python scripts (`main.py`) directly to the device's Virtual File System.
+[NET] Initializing ESP32 Network Manager...
+[STORAGE] Initializing 6.8MB LittleFS/SPIFFS Partition for ESP32-S3...
+[STORAGE] Flash VFS Mounted: Total: 6800 KB, Used: 48 KB
+[APPS] Initializing Dynamic Application & Scripting Engine...
+[PYTHON] Initializing MicroPython Native Bridge & Runtime...
+[WASM] Initializing WebAssembly Sandboxed Micro-Runtime...
+[ROBOTICS] Initializing Universal Robot Brain on Core 1...
+[SERVO] Auto-linked to PCA9685 16-Channel I2C Servo Expander at 0x40.
+[ROBOTICS] Universal Kinematics & Control Engine Active.
+[AI] Initializing TensorFlow Lite Micro & ESP-NN SIMD Neural Engine...
+[CAMERA] Initializing ESP32-S3 DVP Camera Driver with 8MB Octal PSRAM...
+[CAMERA] ESP32-S3 Hardware Camera Pipeline Initialized in PSRAM.
+[AI] Edge AI & Vision Pipeline Active on Core 1.
+[WEB] Starting ESP32 HTTP Server on Port 80...
+[WEB] Universal Robotics, Edge AI, Python IDE & File System endpoints active.
+[SYS] Received SYSTEM_BOOT event. System is fully UP & READY!
+
+aeron> 
+```
+
+---
+
+## 🌐 2. Connecting to the Web Dashboard
+
+Tamimystic OS hosts a high-performance, asynchronous web application directly from flash:
+
+### Step 1: Connect Wi-Fi
+Using the serial CLI, connect the OS to your local Wi-Fi network:
+```bash
+aeron> wifi "MyHomeNetwork" "MySecretPassword"
+```
+The OS outputs:
+```text
+[NET] Connecting to Wi-Fi...
+[NET] Wi-Fi Connected. Got IP: 192.168.1.142
+[SYS] Network is now CONNECTED!
+```
+
+### Step 2: Open Dashboard in Browser
+Open your web browser (Chrome, Firefox, Safari, Edge) on your phone, tablet, or PC and navigate to:
+```text
+http://192.168.1.142/
+```
+
+---
+
+## 🖥️ 3. Dashboard Features Overview
+
+The Web Dashboard is organized into 5 primary panels:
+
+```mermaid
+graph TD
+    DASH["Web Dashboard (http://&lt;device-ip&gt;/)"]
+    DASH --> P1["🦾 Robotics Command Center (Kinematics, D-Pad, 6-DOF Arm Sliders)"]
+    DASH --> P2["🧠 Edge AI Live Stream (MJPEG Camera View, Bounding Boxes, Model Selector)"]
+    DASH --> P3["🔌 Plug & Play Matrix (Live I2C Sensor List & Dynamic Pin Re-assignment)"]
+    DASH --> P4["🐍 In-Browser Python IDE (Code Editor, Live Console & 6.8MB File Manager)"]
+    DASH --> P5["🔄 Dual-Bank OTA Manager (Upload Firmware .bin & Rollback Monitor)"]
+```
+
+1. **🦾 Universal Robotics**:
+   - Live D-Pad virtual joystick for Differential and Mecanum holonomic strafing.
+   - 6-DOF Robotic Arm joint angle sliders ($J_1 - J_6$) with real-time degree feedback.
+   - Interactive $(X, Y, Z)$ Cartesian Inverse Kinematics target input.
+   - Emergency Stop (E-Stop) and Safety Auto-Braking indicator.
+2. **🧠 Edge AI & Vision Stream**:
+   - Real-time video stream from OV2640 / OV3660 camera.
+   - Overlaid neural bounding boxes with class labels and confidence percentages.
+   - Model switcher (Person Detector, Object Detector, Lane Follower, Gesture Classifier).
+   - Auto-Follow Target toggle.
+3. **🔌 Plug & Play Hardware Matrix**:
+   - Interactive table showing all detected I2C sensors with physical addresses and status.
+   - Visual software pin matrix: Click any pin (e.g., `MOTOR_L_PWM` or `I2C_SDA`) and assign it to another GPIO without restarting.
+4. **🐍 Web Python IDE**:
+   - Full code editor with syntax highlighting.
+   - Direct execution button (`Run Script`) and `Stop` button.
+   - Live stdout console streaming print outputs in real-time.
+   - Flash file manager to view and delete files in the 6.8MB LittleFS partition.
+5. **🔄 Dual-Bank OTA**:
+   - Single-click binary firmware upload with automatic slot switching and rollback arming.

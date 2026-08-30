@@ -1,38 +1,88 @@
-# Installation Guide
+# 📥 Flashing & Installation Guide
 
-The installation process for Tamimystic OS is designed to be fully reproducible. The continuous integration pipeline automatically compiles the system binaries upon every verified commit.
+This guide covers flashing Tamimystic OS onto your ESP32-S3-N16R8 board using either the command line (`esptool.py`), GUI tools (ESP Flash Download Tool), or Web Flasher.
 
-## Obtaining the Firmware Binaries
+---
 
-1. Navigate to the GitHub Actions page of the repository.
-2. Select the latest successful build artifact labeled `tamimystic_os_firmware`.
-3. Extract the downloaded archive. The archive contains the following critical binary files:
-    *   `bootloader.bin`: The second-stage bootloader responsible for initializing flash and PSRAM.
-    *   `partition-table.bin`: The memory map defining the boundaries for NVS, OTA, and Virtual File Systems (SPIFFS).
-    *   `tamimystic_os.bin`: The core operating system executable.
+## 📦 Download Firmware Binaries
 
-## Flashing the Device (Windows)
+You can download the latest automated firmware binaries directly from the **[GitHub Releases Page](https://github.com/tamimystic/tamimystic-os/releases)** or from the latest **[GitHub Actions Build Artifacts](https://github.com/tamimystic/tamimystic-os/actions/workflows/build.yml)**.
 
-The standard procedure utilizes the Espressif Flash Download Tool.
+The firmware package contains:
+1. `bootloader.bin` (Second stage bootloader @ `0x0000`)
+2. `partition-table.bin` (16MB Dual OTA & LittleFS partition table @ `0x8000`)
+3. `tamimystic_os.bin` (Main Operating System application image @ `0x20000`)
 
-1.  Download the official Espressif Flash Download Tool.
-2.  Launch the application and select **ESP32-S3** as the Target Chip and **Develop** as the WorkMode.
-3.  Load the binaries into the flashing queue and assign their explicit memory offsets:
-    *   `bootloader.bin` at offset `0x0`
-    *   `partition-table.bin` at offset `0x8000`
-    *   `tamimystic_os.bin` at offset `0x10000`
-4.  Configure the hardware parameters to match the ESP32-S3 N16R8 specification:
-    *   SPI SPEED: **80MHz**
-    *   SPI MODE: **QIO**
-    *   FLASH SIZE: **16MB**
-5.  Select the corresponding COM port, set the baud rate to `460800`, and initiate the flashing process.
+---
 
-## Flashing via Command Line (esptool.py)
+## ⚡ Method 1: Flashing via `esptool.py` (Recommended)
 
-For automated environments, the `esptool.py` command-line utility is recommended.
+`esptool.py` is the official, high-speed Python command-line utility from Espressif.
 
+### Step 1: Install `esptool`
+If you have Python installed, run:
 ```bash
-esptool.py -p COM3 -b 460800 --before default_reset --after hard_reset --chip esp32s3 write_flash --flash_mode qio --flash_size 16MB --flash_freq 80m 0x0 bootloader.bin 0x8000 partition-table.bin 0x10000 tamimystic_os.bin
+pip install esptool
 ```
 
-Upon successful flashing, issue a hardware reset to the board to begin the initialization sequence.
+### Step 2: Put ESP32-S3 in Bootloader Mode
+1. Connect your ESP32-S3 board to your PC via the **USB-to-UART** or **Native USB** port.
+2. Hold down the **BOOT** button (GPIO 0).
+3. Press and release the **RESET / EN** button.
+4. Release the **BOOT** button.
+
+### Step 3: Erase Flash (Recommended for First Install)
+```bash
+# Replace COMx with your port (e.g., COM3 on Windows or /dev/ttyUSB0 on Linux)
+esptool.py --port COM3 erase_flash
+```
+
+### Step 4: Flash the Complete Binary Set
+```bash
+esptool.py --chip esp32s3 --port COM3 --baud 921600 \
+  --before default_reset --after hard_reset write_flash -z \
+  --flash_mode dio --flash_freq 80m --flash_size 16MB \
+  0x0000 bootloader.bin \
+  0x8000 partition-table.bin \
+  0x20000 tamimystic_os.bin
+```
+
+---
+
+## 📊 Partition Table Architecture (16MB Layout)
+
+Tamimystic OS utilizes a customized partition layout that fully leverages the 16MB Quad-SPI flash:
+
+| Partition Name | Type | SubType | Offset | Size | Purpose |
+|---|---|---|---|---|---|
+| `nvs` | Data | NVS | `0x9000` | **28 KB** | Non-Volatile Storage (Pin Matrix, Wi-Fi credentials, Robot modes) |
+| `otadata` | Data | OTA | `0x10000` | **8 KB** | Active OTA boot-slot selector & rollback state |
+| `phy_init` | Data | PHY | `0x12000` | **4 KB** | Wi-Fi RF physical calibration parameters |
+| `app0` | App | OTA_0 | `0x20000` | **4.5 MB** | Active firmware slot (Primary OS binary) |
+| `app1` | App | OTA_1 | Automatic | **4.5 MB** | Backup firmware slot (Secondary OTA update target) |
+| `storage` | Data | LittleFS | Automatic | **6.8 MB** | User Virtual File System (MicroPython scripts, AI models, logs) |
+
+---
+
+## 🖥️ Method 2: Testing on PC via Native Simulator
+
+If you don't have physical hardware on hand, you can run the full Tamimystic OS simulator natively on Windows or Linux!
+
+### On Windows:
+```bash
+# From the root repository directory
+mkdir build && cd build
+cmake -G "MinGW Makefiles" ..
+cmake --build .
+./tamimystic_os_sim.exe
+```
+
+### On Linux / macOS:
+```bash
+mkdir build && cd build
+cmake ..
+make -j4
+./tamimystic_os_sim
+```
+
+You will be greeted with the interactive `aeron>` serial terminal and simulated Web Dashboard!
