@@ -1,22 +1,58 @@
-# MicroPython Integration
+# Dynamic Scripting Engine, Flash VFS & Web IDE
 
-To democratize robotics and IoT development, Tamimystic OS embeds a complete MicroPython interpreter. This allows users to write their business logic in high-level Python, bypassing the complexities of C++ memory management and cross-compilation.
+Tamimystic OS embeds a dynamic scripting engine with high-level Python and WASM runtime support, enabling rapid prototyping without compiling firmware.
 
-## Execution Environment
+---
 
-The MicroPython interpreter is compiled as a static library and linked into the Tamimystic OS binary. When the OS finishes its hardware and network boot sequences, it spawns a dedicated FreeRTOS task on Core 1 to execute the Python Virtual Machine (VM).
+## 🐍 Native Python API Reference
 
-## C++ to Python Bindings
+User scripts access OS hardware and robotics primitives via the `tamimystic` module:
 
-The true power of this integration lies in the custom bindings. We have exposed the OS's internal C++ APIs to the Python runtime.
-
-When a user writes the following Python code:
 ```python
-import os_motor
-os_motor.set_speed(1, 100)
+import tamimystic
+
+# 1. Drive Robot Platform
+tamimystic.robot.move(linear_speed=60, angular_speed=0)
+
+# 2. Control 6-DOF Robotic Arm via Inverse Kinematics
+tamimystic.robot.ik(x=15.0, y=0.0, z=12.0)
+
+# 3. Read Sensors
+distance = tamimystic.sensor.read_distance()
+print("Front Obstacle Distance:", distance)
+
+# 4. Hardware GPIO Control
+tamimystic.gpio.write(pin=48, value=1)
+
+# 5. Non-Blocking Delay
+tamimystic.delay(1000)
 ```
-The Python VM intercepts the `set_speed` call and invokes the underlying C++ HAL function. This provides the execution simplicity of Python with the raw I/O performance of C++.
 
-## Virtual File System (VFS)
+---
 
-Python scripts are stored in the SPIFFS (SPI Flash File System) partition. Users upload their scripts via the Web Dashboard. The OS automatically searches for a `main.py` file in the VFS on boot and executes it as the entry point for the user's application.
+## 📁 6.8MB LittleFS Flash Virtual File System (VFS)
+
+The 16MB partition table allocates **6.8MB** exclusively for user applications and file storage:
+
+```csv
+# Name,     Type, SubType, Offset,   Size,     Flags
+nvs,        data, nvs,     0x9000,   0x7000,
+otadata,    data, ota,     0x10000,  0x2000,
+phy_init,   data, phy,     0x12000,  0x1000,
+app0,       app,  ota_0,   0x20000,  4500K,
+app1,       app,  ota_1,   ,         4500K,
+storage,    data, spiffs,  ,         6800K,
+```
+
+- If an `autorun.py` file is present in the `/storage` root, Tamimystic OS executes it automatically on startup.
+
+---
+
+## 🌐 In-Browser Web Python IDE & File Manager
+
+Access the OS dashboard by connecting to the ESP32 Wi-Fi network and navigating to `http://<device-ip>/`:
+
+- **Interactive Code Editor**: Write and test Python scripts directly from your web browser with syntax highlighting.
+- **Run / Stop Control**: Instantly execute or stop scripts on the hardware.
+- **Flash File Manager**: Upload, download, inspect, and delete files on the 6.8MB partition.
+- **Dual-Bank OTA Widget**: Upload `.bin` firmware updates directly through the browser with automated verification and rollback protection.

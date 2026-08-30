@@ -1,17 +1,44 @@
-# Universal Hardware Abstraction Layer
+# Universal Hardware Abstraction Layer & Plug and Play Matrix
 
-The Hardware Abstraction Layer (HAL) is the bridge between the Tamimystic OS C++ core and the physical electrical interfaces of the microcontroller.
+The Tamimystic OS Hardware Abstraction Layer (HAL) abstracts ESP32-S3 peripherals (GPIO, I2C, SPI, PWM, UART) into a software-configurable matrix with automatic sensor discovery.
 
-## Design Principle: Abstraction over Implementation
+---
 
-The OS core never interacts directly with ESP-IDF specific functions (e.g., `ledc_timer_config` or `uart_driver_install`). Instead, it calls generic OS abstractions (e.g., `os_hal_pwm_init` or `os_hal_uart_read`).
+## 🔍 Plug & Play (PnP) Auto-Discovery Registry
 
-This design provides two massive advantages:
-1.  **Portability**: The operating system can be ported to different microcontrollers (e.g., STM32, RP2040) simply by rewriting the underlying HAL implementations, without changing a single line of OS core logic.
-2.  **Native Simulation**: When compiled on Windows or Linux, the HAL intercepts hardware calls and redirects them to the terminal console (e.g., printing `[PWM] Set Pin 18 to 50%` instead of actually toggling a physical pin). This allows developers to test OS logic entirely in software.
+Tamimystic OS maintains an onboard signature database of 15+ industry-standard I2C sensors and actuators:
 
-## Dynamic Multiplexing
+| I2C Address | Device Name | Category | Primary Function |
+|---|---|---|---|
+| `0x68` / `0x69` | **MPU-6050** | IMU / Motion | 6-Axis Accelerometer & Gyroscope |
+| `0x76` / `0x77` | **BME280 / BMP280** | Environmental | Temperature, Humidity & Barometric Pressure |
+| `0x3C` / `0x3D` | **SSD1306** | Display | $128 \times 64$ Monochrome OLED Display |
+| `0x29` | **VL53L0X** | Distance / ToF | Time-of-Flight Laser Distance Ranging ($2\text{ cm} - 200\text{ cm}$) |
+| `0x40` | **PCA9685** | Actuator Expander | 16-Channel 12-bit I2C PWM / Servo Expander |
+| `0x48` | **ADS1115** | ADC / Sensor | 16-bit 4-Channel Precision Analog-to-Digital Converter |
 
-Unlike traditional firmware where `MOTOR_PIN` is defined as a macro `#define MOTOR_PIN 18` at compile time, Tamimystic OS resolves hardware mapping at runtime.
+On boot or when requested via the Web UI / CLI (`pnp scan`), the OS scans the I2C bus and matches device who-am-i registers to auto-configure appropriate drivers.
 
-The system boot sequence reads a JSON-like configuration from the Non-Volatile Storage (NVS). The HAL then dynamically initializes the internal multiplexers to route the requested internal signals (like PWM generators or I2C buses) to the physical pins specified by the user through the Web Dashboard.
+---
+
+## 🔀 Dynamic Software Pin Matrix with NVS Persistence
+
+Users can re-route any peripheral to any safe ESP32-S3 GPIO pin at runtime without recompiling firmware:
+
+```bash
+# View current pin assignments
+aeron> pin show
+
+# Reassign I2C SDA to GPIO 21 and SCL to GPIO 22
+aeron> pin set i2c_sda 21
+aeron> pin set i2c_scl 22
+
+# Reset pin matrix to factory defaults
+aeron> pin reset
+```
+
+### 🔒 Octal PSRAM & Flash Protection Filter
+To prevent bricking or crashing the ESP32-S3 N16R8, the pin matrix enforces strict protection rules:
+- **GPIO 33, 34, 35, 36, 37**: Permanently locked (dedicated to high-speed 8MB Octal PSRAM / Flash bus).
+- **GPIO 19, 20**: Reserved for USB-JTAG / Native USB OTG.
+- **GPIO 45, 46**: Strapping pins guarded.
