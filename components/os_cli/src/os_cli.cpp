@@ -109,7 +109,7 @@ void CLI::init() {
                 return;
             }
             std::string func = args[2];
-            int gpio = std::stoi(args[3]);
+            int gpio = std::atoi(args[3].c_str());
             if (PinMatrixManager::getInstance().setPin(func, gpio)) {
                 hal_uart_print(("Pin updated: " + func + " -> GPIO " + std::to_string(gpio) + " (Saved to NVS)\n").c_str());
             } else {
@@ -144,8 +144,8 @@ void CLI::init() {
                 hal_uart_print("Usage: robot move <linear_speed -100..100> <angular_speed -100..100>\n");
                 return;
             }
-            float v = std::stof(args[2]);
-            float w = std::stof(args[3]);
+            float v = (float)std::atof(args[2].c_str());
+            float w = (float)std::atof(args[3].c_str());
             RobotController::getInstance().setTwist(v, 0.0f, w);
             hal_uart_print("Rover movement velocity applied.\n");
         } else if (sub == "strafe") {
@@ -153,9 +153,9 @@ void CLI::init() {
                 hal_uart_print("Usage: robot strafe <vx> <vy> <omega>\n");
                 return;
             }
-            float vx = std::stof(args[2]);
-            float vy = std::stof(args[3]);
-            float w = std::stof(args[4]);
+            float vx = (float)std::atof(args[2].c_str());
+            float vy = (float)std::atof(args[3].c_str());
+            float w = (float)std::atof(args[4].c_str());
             RobotController::getInstance().setTwist(vx, vy, w);
             hal_uart_print("Holonomic velocity applied.\n");
         } else if (sub == "arm") {
@@ -164,12 +164,12 @@ void CLI::init() {
                 return;
             }
             ArmJoints j;
-            j.base_yaw = std::stof(args[2]);
-            j.shoulder_pitch = std::stof(args[3]);
-            j.elbow_pitch = std::stof(args[4]);
-            j.wrist_pitch = std::stof(args[5]);
-            j.wrist_roll = std::stof(args[6]);
-            j.gripper = std::stof(args[7]);
+            j.base_yaw = (float)std::atof(args[2].c_str());
+            j.shoulder_pitch = (float)std::atof(args[3].c_str());
+            j.elbow_pitch = (float)std::atof(args[4].c_str());
+            j.wrist_pitch = (float)std::atof(args[5].c_str());
+            j.wrist_roll = (float)std::atof(args[6].c_str());
+            j.gripper = (float)std::atof(args[7].c_str());
             RobotController::getInstance().setArmJoints(j);
             hal_uart_print("Robotic arm joints commanded.\n");
         } else if (sub == "ik") {
@@ -178,11 +178,11 @@ void CLI::init() {
                 return;
             }
             ArmPose pose;
-            pose.x = std::stof(args[2]);
-            pose.y = std::stof(args[3]);
-            pose.z = std::stof(args[4]);
-            if (args.size() >= 6) pose.pitch = std::stof(args[5]);
-            if (args.size() >= 7) pose.gripper = std::stof(args[6]);
+            pose.x = (float)std::atof(args[2].c_str());
+            pose.y = (float)std::atof(args[3].c_str());
+            pose.z = (float)std::atof(args[4].c_str());
+            if (args.size() >= 6) pose.pitch = (float)std::atof(args[5].c_str());
+            if (args.size() >= 7) pose.gripper = (float)std::atof(args[6].c_str());
             if (RobotController::getInstance().setArmTargetIK(pose)) {
                 auto tel = RobotController::getInstance().getTelemetry();
                 std::stringstream ss;
@@ -318,7 +318,7 @@ void CLI::init() {
             return;
         }
         std::string wasm_log;
-        bool ok = WasmRunner::getInstance().runWasmFile(args[2], wasm_log);
+        WasmRunner::getInstance().runWasmFile(args[2], wasm_log);
         hal_uart_print(wasm_log.c_str());
     });
 

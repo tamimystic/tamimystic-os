@@ -7,9 +7,8 @@
 #include "os_scheduler.h"
 #include <sstream>
 #include <iostream>
-#include <regex>
+#include <cstdlib>
 #include <chrono>
-#include <thread>
 #include <map>
 
 namespace TamimysticOS {
@@ -43,7 +42,6 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
     // 1. print(...) handler
     if (line.rfind("print(", 0) == 0 && line.back() == ')') {
         std::string content = line.substr(6, line.length() - 7);
-        // Simple comma split
         std::stringstream ss(content);
         std::string token;
         std::string line_out = "";
@@ -61,6 +59,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
             }
         }
         stdout_stream += line_out + "\n";
+        hal_uart_print((line_out + "\n").c_str());
         return;
     }
 
@@ -74,9 +73,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
             script_variables[var_name] = 24.8f;
             return;
         }
-        try {
-            script_variables[var_name] = std::stof(expr);
-        } catch (...) {}
+        script_variables[var_name] = (float)std::atof(expr.c_str());
         return;
     }
 
@@ -86,8 +83,8 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string v_str, w_str;
         if (std::getline(ss, v_str, ',') && std::getline(ss, w_str, ',')) {
-            float v = std::stof(trim(v_str));
-            float w = std::stof(trim(w_str));
+            float v = (float)std::atof(trim(v_str).c_str());
+            float w = (float)std::atof(trim(w_str).c_str());
             RobotController::getInstance().setTwist(v, 0.0f, w);
             stdout_stream += "[ROBOT] Velocity commanded: Vx=" + std::to_string((int)v) + "%, W=" + std::to_string((int)w) + "%\n";
         }
@@ -101,7 +98,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::string tok;
         std::vector<float> j_vals;
         while (std::getline(ss, tok, ',')) {
-            j_vals.push_back(std::stof(trim(tok)));
+            j_vals.push_back((float)std::atof(trim(tok).c_str()));
         }
         if (j_vals.size() >= 6) {
             ArmJoints joints = {j_vals[0], j_vals[1], j_vals[2], j_vals[3], j_vals[4], j_vals[5]};
@@ -117,9 +114,9 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string x_s, y_s, z_s;
         if (std::getline(ss, x_s, ',') && std::getline(ss, y_s, ',') && std::getline(ss, z_s, ',')) {
-            float x = std::stof(trim(x_s));
-            float y = std::stof(trim(y_s));
-            float z = std::stof(trim(z_s));
+            float x = (float)std::atof(trim(x_s).c_str());
+            float y = (float)std::atof(trim(y_s).c_str());
+            float z = (float)std::atof(trim(z_s).c_str());
             ArmPose p = {x, y, z, 0.0f, 0.0f};
             bool ok = RobotController::getInstance().setArmTargetIK(p);
             stdout_stream += (ok ? "[ROBOT:IK] Target reached: (" + x_s + ", " + y_s + ", " + z_s + " cm)\n" : "[ROBOT:IK] Error: Target unreachable!\n");
@@ -140,8 +137,8 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string p_str, l_str;
         if (std::getline(ss, p_str, ',') && std::getline(ss, l_str, ',')) {
-            int p = std::stoi(trim(p_str));
-            int l = std::stoi(trim(l_str));
+            int p = std::atoi(trim(p_str).c_str());
+            int l = std::atoi(trim(l_str).c_str());
             hal_gpio_set_level(p, l);
             stdout_stream += "[GPIO] Pin " + std::to_string(p) + " -> " + std::to_string(l) + "\n";
         }
@@ -150,7 +147,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
 
     // 8. tamimystic.delay(ms)
     if (line.rfind("tamimystic.delay(", 0) == 0 && line.back() == ')') {
-        int ms = std::stoi(line.substr(17, line.length() - 18));
+        int ms = std::atoi(line.substr(17, line.length() - 18).c_str());
         OSScheduler::getInstance().delay(ms);
         return;
     }
@@ -164,17 +161,11 @@ ScriptExecutionResult PythonRunner::eval(const std::string& python_code) {
     std::string line;
     std::string stdout_buffer = "";
 
-    try {
-        while (std::getline(ss, line)) {
-            executeScriptLine(line, stdout_buffer);
-        }
-        result.success = true;
-        result.stdout_output = stdout_buffer;
-    } catch (const std::exception& e) {
-        result.success = false;
-        result.error_message = e.what();
-        result.stdout_output = stdout_buffer;
+    while (std::getline(ss, line)) {
+        executeScriptLine(line, stdout_buffer);
     }
+    result.success = true;
+    result.stdout_output = stdout_buffer;
 
     auto end_time = std::chrono::steady_clock::now();
     result.execution_time_ms = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
@@ -189,7 +180,6 @@ ScriptExecutionResult PythonRunner::runFile(const std::string& filename) {
         res.error_message = "File not found: " + filename;
         return res;
     }
-
     std::string code(reinterpret_cast<char*>(buf.data()), buf.size());
     return eval(code);
 }

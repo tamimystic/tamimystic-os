@@ -14,7 +14,6 @@
 namespace TamimysticOS {
 
 static httpd_handle_t server = NULL;
-static bool is_running = false;
 
 WebServer& WebServer::getInstance() {
     static WebServer instance;
@@ -64,7 +63,7 @@ static esp_err_t pin_matrix_set_handler(httpd_req_t *req) {
         httpd_query_key_value(query, "pin", param_pin, sizeof(param_pin));
         
         if (param_func[0] && param_pin[0]) {
-            int pin_num = std::stoi(param_pin);
+            int pin_num = std::atoi(param_pin);
             bool ok = PinMatrixManager::getInstance().setPin(param_func, pin_num);
             if (ok) {
                 httpd_resp_set_type(req, "application/json");
@@ -103,9 +102,9 @@ static esp_err_t robot_cmd_vel_handler(httpd_req_t *req) {
         httpd_query_key_value(query, "vx", vx_str, sizeof(vx_str));
         httpd_query_key_value(query, "vy", vy_str, sizeof(vy_str));
         httpd_query_key_value(query, "w", w_str, sizeof(w_str));
-        float vx = vx_str[0] ? std::stof(vx_str) : 0.0f;
-        float vy = vy_str[0] ? std::stof(vy_str) : 0.0f;
-        float w  = w_str[0]  ? std::stof(w_str)  : 0.0f;
+        float vx = vx_str[0] ? (float)std::atof(vx_str) : 0.0f;
+        float vy = vy_str[0] ? (float)std::atof(vy_str) : 0.0f;
+        float w  = w_str[0]  ? (float)std::atof(w_str)  : 0.0f;
         RobotController::getInstance().setTwist(vx, vy, w);
     }
     httpd_resp_set_type(req, "application/json");
@@ -119,12 +118,12 @@ static esp_err_t robot_arm_handler(httpd_req_t *req) {
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
         ArmJoints j = RobotController::getInstance().getTelemetry().joints;
         char val[16] = {0};
-        if (httpd_query_key_value(query, "j1", val, sizeof(val)) == ESP_OK) j.base_yaw = std::stof(val);
-        if (httpd_query_key_value(query, "j2", val, sizeof(val)) == ESP_OK) j.shoulder_pitch = std::stof(val);
-        if (httpd_query_key_value(query, "j3", val, sizeof(val)) == ESP_OK) j.elbow_pitch = std::stof(val);
-        if (httpd_query_key_value(query, "j4", val, sizeof(val)) == ESP_OK) j.wrist_pitch = std::stof(val);
-        if (httpd_query_key_value(query, "j5", val, sizeof(val)) == ESP_OK) j.wrist_roll = std::stof(val);
-        if (httpd_query_key_value(query, "j6", val, sizeof(val)) == ESP_OK) j.gripper = std::stof(val);
+        if (httpd_query_key_value(query, "j1", val, sizeof(val)) == ESP_OK) j.base_yaw = (float)std::atof(val);
+        if (httpd_query_key_value(query, "j2", val, sizeof(val)) == ESP_OK) j.shoulder_pitch = (float)std::atof(val);
+        if (httpd_query_key_value(query, "j3", val, sizeof(val)) == ESP_OK) j.elbow_pitch = (float)std::atof(val);
+        if (httpd_query_key_value(query, "j4", val, sizeof(val)) == ESP_OK) j.wrist_pitch = (float)std::atof(val);
+        if (httpd_query_key_value(query, "j5", val, sizeof(val)) == ESP_OK) j.wrist_roll = (float)std::atof(val);
+        if (httpd_query_key_value(query, "j6", val, sizeof(val)) == ESP_OK) j.gripper = (float)std::atof(val);
         RobotController::getInstance().setArmJoints(j);
     }
     httpd_resp_set_type(req, "application/json");
@@ -138,11 +137,11 @@ static esp_err_t robot_arm_ik_handler(httpd_req_t *req) {
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
         ArmPose pose = RobotController::getInstance().getTelemetry().pose;
         char val[16] = {0};
-        if (httpd_query_key_value(query, "x", val, sizeof(val)) == ESP_OK) pose.x = std::stof(val);
-        if (httpd_query_key_value(query, "y", val, sizeof(val)) == ESP_OK) pose.y = std::stof(val);
-        if (httpd_query_key_value(query, "z", val, sizeof(val)) == ESP_OK) pose.z = std::stof(val);
-        if (httpd_query_key_value(query, "pitch", val, sizeof(val)) == ESP_OK) pose.pitch = std::stof(val);
-        if (httpd_query_key_value(query, "gripper", val, sizeof(val)) == ESP_OK) pose.gripper = std::stof(val);
+        if (httpd_query_key_value(query, "x", val, sizeof(val)) == ESP_OK) pose.x = (float)std::atof(val);
+        if (httpd_query_key_value(query, "y", val, sizeof(val)) == ESP_OK) pose.y = (float)std::atof(val);
+        if (httpd_query_key_value(query, "z", val, sizeof(val)) == ESP_OK) pose.z = (float)std::atof(val);
+        if (httpd_query_key_value(query, "pitch", val, sizeof(val)) == ESP_OK) pose.pitch = (float)std::atof(val);
+        if (httpd_query_key_value(query, "gripper", val, sizeof(val)) == ESP_OK) pose.gripper = (float)std::atof(val);
 
         if (RobotController::getInstance().setArmTargetIK(pose)) {
             httpd_resp_set_type(req, "application/json");
