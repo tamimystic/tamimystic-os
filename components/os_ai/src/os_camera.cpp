@@ -3,12 +3,14 @@
 #include "os_pin_matrix.h"
 #include <chrono>
 
-#ifndef OS_TARGET_NATIVE
+#if defined(OS_TARGET_NATIVE)
+#define USE_SIMULATED_CAMERA 1
+#else
 #if __has_include("esp_camera.h")
-#define HAVE_ESP_CAMERA 1
+#define USE_SIMULATED_CAMERA 0
 #include "esp_camera.h"
 #else
-#define HAVE_ESP_CAMERA 0
+#define USE_SIMULATED_CAMERA 1
 #endif
 #endif
 
@@ -48,7 +50,7 @@ bool CameraManager::init(FrameResolution resolution, FrameFormat format) {
     current_resolution = resolution;
     current_format = format;
 
-#if defined(OS_TARGET_NATIVE) || (defined(HAVE_ESP_CAMERA) && HAVE_ESP_CAMERA == 0)
+#if USE_SIMULATED_CAMERA
     hal_uart_print("[CAMERA] Initializing Simulated Camera Frame Generator (320x240 JPEG)...\n");
     generateNativeMockFrame();
     initialized = true;
@@ -113,7 +115,7 @@ void CameraManager::generateNativeMockFrame() {
 CameraFrame* CameraManager::getFrame() {
     if (!initialized) return nullptr;
 
-#if defined(OS_TARGET_NATIVE) || (defined(HAVE_ESP_CAMERA) && HAVE_ESP_CAMERA == 0)
+#if USE_SIMULATED_CAMERA
     generateNativeMockFrame();
     return &native_frame;
 #else
@@ -136,7 +138,7 @@ CameraFrame* CameraManager::getFrame() {
 void CameraManager::returnFrame(CameraFrame* frame) {
     if (!frame) return;
 
-#if !defined(OS_TARGET_NATIVE) && defined(HAVE_ESP_CAMERA) && (HAVE_ESP_CAMERA == 1)
+#if !USE_SIMULATED_CAMERA
     if (frame != &native_frame) {
         delete frame;
     }
