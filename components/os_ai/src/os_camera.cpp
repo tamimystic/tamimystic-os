@@ -4,7 +4,12 @@
 #include <chrono>
 
 #ifndef OS_TARGET_NATIVE
+#if __has_include("esp_camera.h")
+#define HAVE_ESP_CAMERA 1
 #include "esp_camera.h"
+#else
+#define HAVE_ESP_CAMERA 0
+#endif
 #endif
 
 namespace TamimysticOS {
@@ -43,11 +48,11 @@ bool CameraManager::init(FrameResolution resolution, FrameFormat format) {
     current_resolution = resolution;
     current_format = format;
 
-#ifdef OS_TARGET_NATIVE
-    hal_uart_print("[CAMERA] Initializing Native Simulated Camera Engine (320x240 JPEG)...\n");
+#if defined(OS_TARGET_NATIVE) || (defined(HAVE_ESP_CAMERA) && HAVE_ESP_CAMERA == 0)
+    hal_uart_print("[CAMERA] Initializing Simulated Camera Frame Generator (320x240 JPEG)...\n");
     generateNativeMockFrame();
     initialized = true;
-    hal_uart_print("[CAMERA] Native Camera Simulation Ready (Octal PSRAM Emulation Active).\n");
+    hal_uart_print("[CAMERA] Camera Simulation Ready (Octal PSRAM Emulation Active).\n");
     return true;
 #else
     hal_uart_print("[CAMERA] Initializing ESP32-S3 DVP Camera Driver with 8MB Octal PSRAM...\n");
@@ -80,12 +85,13 @@ bool CameraManager::init(FrameResolution resolution, FrameFormat format) {
 
     esp_err_t err = esp_camera_init(&config);
     if (err != ESP_OK) {
-        hal_uart_print(("[CAMERA] Error: Camera init failed with code " + std::to_string(err) + "\n").c_str());
-        initialized = false;
-        return false;
+        hal_uart_print(("[CAMERA] Warning: Physical camera not detected (code " + std::to_string(err) + "). Falling back to simulated stream.\n").c_str());
+        generateNativeMockFrame();
+        initialized = true;
+        return true;
     }
     initialized = true;
-    hal_uart_print("[CAMERA] ESP32-S3 Camera Pipeline Initialized in PSRAM.\n");
+    hal_uart_print("[CAMERA] ESP32-S3 Hardware Camera Pipeline Initialized in PSRAM.\n");
     return true;
 #endif
 }
@@ -107,12 +113,15 @@ void CameraManager::generateNativeMockFrame() {
 CameraFrame* CameraManager::getFrame() {
     if (!initialized) return nullptr;
 
-#ifdef OS_TARGET_NATIVE
+#if defined(OS_TARGET_NATIVE) || (defined(HAVE_ESP_CAMERA) && HAVE_ESP_CAMERA == 0)
     generateNativeMockFrame();
     return &native_frame;
 #else
     camera_fb_t* fb = esp_camera_fb_get();
-    if (!fb) return nullptr;
+    if (!fb) {
+        generateNativeMockFrame();
+        return &native_frame;
+    }
     
     CameraFrame* frame = new CameraFrame();
     frame->buf = fb->buf;
@@ -127,10 +136,10 @@ CameraFrame* CameraManager::getFrame() {
 void CameraManager::returnFrame(CameraFrame* frame) {
     if (!frame) return;
 
-#ifndef OS_TARGET_NATIVE
-    // On ESP32, release back to esp_camera driver
-    // Note: in a full wrapper, we store the original fb pointer and call esp_camera_fb_return(fb)
-    delete frame;
+#if !defined(OS_TARGET_NATIVE) && defined(HAVE_ESP_CAMERA) && (HAVE_ESP_CAMERA == 1)
+    if (frame != &native_frame) {
+        delete frame;
+    }
 #endif
 }
 

@@ -151,11 +151,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
     // 8. tamimystic.delay(ms)
     if (line.rfind("tamimystic.delay(", 0) == 0 && line.back() == ')') {
         int ms = std::stoi(line.substr(17, line.length() - 18));
-#ifdef OS_TARGET_NATIVE
-        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-#else
-        vTaskDelay(pdMS_TO_TICKS(ms));
-#endif
+        OSScheduler::getInstance().delay(ms);
         return;
     }
 }
