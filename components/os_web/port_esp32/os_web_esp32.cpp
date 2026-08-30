@@ -14,6 +14,7 @@
 namespace TamimysticOS {
 
 static httpd_handle_t server = NULL;
+static bool is_running = false;
 
 WebServer& WebServer::getInstance() {
     static WebServer instance;

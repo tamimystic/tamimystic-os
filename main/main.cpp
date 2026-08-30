@@ -47,7 +47,7 @@ void os_core_start() {
     AppManager::getInstance().init();
 
     // 8. Initialize Robotics & AI Subsystems
-    MotorDriver::getInstance().init();
+    RobotController::getInstance().init();
     AIModule::getInstance().init();
 
     // Background Task for System Heartbeat

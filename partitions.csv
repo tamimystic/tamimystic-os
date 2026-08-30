@@ -1,6 +1,8 @@
-# Name,   Type, SubType, Offset,  Size, Flags
-nvs,      data, nvs,     0x9000,  0x5000,
-otadata,  data, ota,     0xe000,  0x2000,
-app0,     app,  ota_0,   0x10000, 4M,
-app1,     app,  ota_1,   ,        4M,
-spiffs,   data, spiffs,  ,        4M,
+# ESP32-S3 16MB Flash Partition Table for Tamimystic OS
+# Name,     Type, SubType, Offset,   Size,     Flags
+nvs,        data, nvs,     0x9000,   0x7000,
+otadata,    data, ota,     0x10000,  0x2000,
+phy_init,   data, phy,     0x12000,  0x1000,
+app0,       app,  ota_0,   0x20000,  4500K,
+app1,       app,  ota_1,   ,         4500K,
+storage,    data, spiffs,  ,         6800K,
