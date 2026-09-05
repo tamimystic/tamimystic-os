@@ -1,4 +1,4 @@
-# 🏎️ Wheeled Kinematics: Differential & Mecanum 4WD
+# Wheeled Kinematics: Differential and Mecanum 4WD
 
 This guide explains the mathematics, control theory, and practical programming of wheeled mobile robots in Tamimystic OS.
 
@@ -90,7 +90,7 @@ aeron> robot strafe 40 30 15
 
 ---
 
-## 🐍 Python Code Example
+## Python Code Example
 
 ```python
 import tamimystic

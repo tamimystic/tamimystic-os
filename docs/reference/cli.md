@@ -1,10 +1,10 @@
-# 📖 Serial CLI Command Reference (`aeron>`)
+# Serial CLI Command Reference (aeron>)
 
 The Tamimystic OS interactive shell (`aeron>`) is available over the primary UART console at **115200 baud**.
 
 ---
 
-## 📋 Comprehensive Command Table
+## Comprehensive Command Table
 
 | Command | Subcommands | Arguments | Description |
 |---|---|---|---|

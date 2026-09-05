@@ -1,10 +1,10 @@
-# 📷 DVP Camera Driver & Octal PSRAM Streaming Pipeline
+# DVP Camera Driver and Octal PSRAM Streaming Pipeline
 
 Tamimystic OS provides a high-throughput, low-latency Digital Video Port (DVP) camera pipeline specifically engineered for the ESP32-S3's **8MB Octal PSRAM** interface.
 
 ---
 
-## 🔬 Camera Architecture & Memory Management
+## Camera Architecture and Memory Management
 
 Standard microcontroller camera drivers suffer from frame drops and memory starvation because internal SRAM (512KB) is too small to hold high-resolution JPEG frames.
 
@@ -23,7 +23,7 @@ graph LR
 
 ---
 
-## 📷 Supported Sensors & Pinout
+## Supported Sensors and Pinout
 
 | Camera Sensor | Maximum Resolution | Output Formats | Recommended Resolution |
 |---|---|---|---|
@@ -40,7 +40,7 @@ graph LR
 
 ---
 
-## 🌐 Streaming Camera to Web Dashboard
+## Streaming Camera to Web Dashboard
 
 The OS exposes a dedicated MJPEG snapshot endpoint at:
 ```text
@@ -50,7 +50,7 @@ The in-browser Web Dashboard queries this endpoint continuously to render a 25+ 
 
 ---
 
-## 💻 CLI Commands
+## CLI Commands
 
 ```bash
 # Check camera hardware status and PSRAM buffer allocation

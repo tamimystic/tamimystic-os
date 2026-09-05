@@ -1,19 +1,19 @@
-# 🌌 Future Horizons: Master Roadmap & Blueprint
+# Future Horizons: Master Roadmap and Blueprint
 
 This document outlines the master development roadmap for the next generation of **Tamimystic OS** on the **ESP32-S3-N16R8** architecture.
 
 ---
 
-## 🧭 Master Roadmap Overview
+## Master Roadmap Overview
 
 ```mermaid
 graph TD
-    P5["🚀 Phase 5: micro-ROS & ROS2 Native Ecosystem"]
-    P6["🗺️ Phase 6: 2D LiDAR Driver, SLAM & Occupancy Grid Nav"]
-    P7["🎙️ Phase 7: Audio Edge AI, Keyword Spotting & Voice Synthesis"]
-    P8["🛰️ Phase 8: ESP-NOW Mesh Swarm & Ultra-Low-Latency Remote"]
-    P9["📱 Phase 9: Bluetooth Low Energy (BLE 5.0) & Web Bluetooth"]
-    P10["🧪 Phase 10: Automated CI Test Suite & Kinematics Benchmarks"]
+    P5["Phase 5: micro-ROS and ROS2 Native Ecosystem"]
+    P6["Phase 6: 2D LiDAR Driver, SLAM and Occupancy Grid Nav"]
+    P7["Phase 7: Audio Edge AI, Keyword Spotting and Voice Synthesis"]
+    P8["Phase 8: ESP-NOW Mesh Swarm and Ultra-Low-Latency Remote"]
+    P9["Phase 9: Bluetooth Low Energy (BLE 5.0) and Web Bluetooth"]
+    P10["Phase 10: Automated CI Test Suite and Kinematics Benchmarks"]
 
     P5 --> P6
     P6 --> P7
@@ -24,21 +24,21 @@ graph TD
 
 ---
 
-## 🚀 Phase 5: micro-ROS & ROS2 Native Distributed Robotics
+## Phase 5: micro-ROS and ROS2 Native Distributed Robotics
 
 * **DDS Transport Layer**: Asynchronous UDP over Wi-Fi / Serial transport communicating with the `micro-ros-agent`.
 * **Execution Model**: Dedicated FreeRTOS micro-ROS executor task running on **Core 0**.
 * **Standard ROS2 Topics**:
   - `/cmd_vel` (`geometry_msgs/msg/Twist`): Inbound velocity commands routed directly to Kinematics Engine.
-  - `/odom` (`nav_msgs/msg/Odometry`): Outbound wheel odometry with dead-reckoning & covariance matrix.
-  - `/joint_states` (`sensor_msgs/msg/JointState`): Live 6-DOF robotic arm joint angles ($J_1 - J_6$) & velocities.
-  - `/imu/data` (`sensor_msgs/msg/Imu`): Filtered 6-axis accelerometer & gyroscope data from MPU-6050.
+  - `/odom` (`nav_msgs/msg/Odometry`): Outbound wheel odometry with dead-reckoning and covariance matrix.
+  - `/joint_states` (`sensor_msgs/msg/JointState`): Live 6-DOF robotic arm joint angles ($J_1 - J_6$) and velocities.
+  - `/imu/data` (`sensor_msgs/msg/Imu`): Filtered 6-axis accelerometer and gyroscope data from MPU-6050.
   - `/camera/image/compressed` (`sensor_msgs/msg/CompressedImage`): DVP camera JPEG stream for ROS2 RViz visualization.
   - `/scan` (`sensor_msgs/msg/LaserScan`): 360° distance range data from 2D LiDAR.
 
 ---
 
-## 🗺️ Phase 6: 2D LiDAR Driver, SLAM & Occupancy Grid Navigation
+## Phase 6: 2D LiDAR Driver, SLAM and Occupancy Grid Navigation
 
 * **Hardware Support**: UART DMA driver for affordable 360° 2D LiDARs (RPLiDAR A1/A2, LD19 / D300, YDLidar X2/X4).
 * **2D Occupancy Grid Map**:
@@ -52,20 +52,20 @@ graph TD
 
 ---
 
-## 🎙️ Phase 7: Audio Edge AI, Voice Control & Speech Synthesis
+## Phase 7: Audio Edge AI, Voice Control and Speech Synthesis
 
 * **Hardware Interface**:
   - **Audio Input**: I2S DMA driver for digital MEMS microphone (INMP441 / SPH0645).
   - **Audio Output**: I2S DAC amplifier (MAX98357A / PCM5102) connected to a 3W speaker.
-* **Neural Wake-Word & Keyword Spotting (KWS)**:
+* **Neural Wake-Word and Keyword Spotting (KWS)**:
   - Quantized TensorFlow Lite Micro audio classification model running on **Core 1**.
   - Recognized Voice Commands: *"Hey Tamimystic"*, *"Drive Forward"*, *"Stop"*, *"Turn Left"*, *"Grab Object"*.
-* **Speech Feedback & Sound Effects**:
+* **Speech Feedback and Sound Effects**:
   - Embedded PCM audio synthesizer for voice confirmations, obstacle beeps, and audio alerts.
 
 ---
 
-## 🛰️ Phase 8: ESP-NOW Mesh Swarm Robotics & Handheld Controller Bridge
+## Phase 8: ESP-NOW Mesh Swarm Robotics and Handheld Controller Bridge
 
 * **ESP-NOW Peer-to-Peer Protocol**:
   - Connectionless 2.4GHz RF protocol operating concurrently alongside standard Wi-Fi station mode ($<4\text{ ms}$ latency).
@@ -76,7 +76,7 @@ graph TD
 
 ---
 
-## 📱 Phase 9: Bluetooth Low Energy (BLE 5.0) & Web Bluetooth Mobile App
+## Phase 9: Bluetooth Low Energy (BLE 5.0) and Web Bluetooth Mobile App
 
 * **NimBLE GATT Server**:
   - Lightweight BLE stack consuming $< 25\text{ KB}$ RAM.
@@ -86,9 +86,9 @@ graph TD
 
 ---
 
-## 🧪 Phase 10: Automated CI Test Suite & Kinematics Benchmarks
+## Phase 10: Automated CI Test Suite and Kinematics Benchmarks
 
-* **CTest & Native Simulator Suite**:
+* **CTest and Native Simulator Suite**:
   - Unit tests for Inverse Kinematics analytical convergence ($100\%$ valid pose recovery).
   - Mecanum matrix transformation verification.
   - Event Bus thread-safety and latency stress tests.

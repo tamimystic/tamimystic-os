@@ -1,25 +1,25 @@
-# ⏱️ 5-Minute Quickstart Tutorial
+# 5-Minute Quickstart Tutorial
 
 This hands-on tutorial walks you through your very first Tamimystic OS project: writing a Python script to blink the onboard status LED, reading a live distance sensor, and driving a robot motor.
 
 ---
 
-## 🎯 What We Will Accomplish
+## What We Will Accomplish
 1. Configure an onboard LED pin.
 2. Read a distance sensor using the native Python API.
 3. Command the robot platform to drive forward and auto-brake when an obstacle is detected.
 
 ---
 
-## 🛠️ Step 1: Open the Web Python IDE
+## Step 1: Open the Web Python IDE
 
 1. Connect your computer to the same Wi-Fi network as your ESP32-S3.
 2. Navigate to `http://<your-device-ip>/` in your web browser.
-3. Scroll down to the **🐍 Dynamic Python IDE & VFS Storage** section.
+3. Scroll down to the **Dynamic Python IDE and VFS Storage** section.
 
 ---
 
-## 💻 Step 2: Paste the Quickstart Script
+## Step 2: Paste the Quickstart Script
 
 Paste the following script directly into the in-browser code editor:
 
@@ -58,7 +58,7 @@ print("=== Script Completed Successfully! ===")
 
 ---
 
-## ▶️ Step 3: Run & Watch the Live Output
+## Step 3: Run and Watch the Live Output
 
 1. Click the **Run Script** button in the Web IDE (or run `python eval "<code...>"` in the serial CLI).
 2. Look at the **Console Output** window below the editor:
@@ -77,11 +77,11 @@ Front Obstacle Distance: 24.8 cm
 === Script Completed Successfully! ===
 ```
 
-Congratulations! 🎉 You have just programmed an autonomous robotics decision loop directly from your browser without compiling a single line of C++!
+You have now programmed an autonomous robotics decision loop directly from your browser without compiling a single line of C++!
 
 ---
 
-## 💾 Step 4: Make It Run on Boot (`autorun.py`)
+## Step 4: Make It Run on Boot (autorun.py)
 
 If you want your ESP32-S3 robot to execute this script automatically whenever the battery is turned on:
 1. In the Web IDE, enter `autorun.py` as the filename.

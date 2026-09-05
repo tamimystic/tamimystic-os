@@ -1,10 +1,10 @@
-# 🎯 Autonomous Visual Target Tracking & Auto-Drive
+# Autonomous Visual Target Tracking and Auto-Drive
 
-Tamimystic OS features a closed-loop **Visual Servoing & Autonomous Tracking Pipeline** that connects AI bounding box detections directly to the wheeled kinematics engine.
+Tamimystic OS features a closed-loop **Visual Servoing and Autonomous Tracking Pipeline** that connects AI bounding box detections directly to the wheeled kinematics engine.
 
 ---
 
-## 🔄 Visual Tracking Control Loop
+## Visual Tracking Control Loop
 
 When Visual Tracking is enabled (`ai track on` or Web Dashboard toggle), the OS runs a high-speed tracking loop:
 
@@ -20,7 +20,7 @@ graph TD
 
 ---
 
-## 🧮 Control Mathematics
+## Control Mathematics
 
 Given a detected target center $x_{\text{center}} \in [0.0, 1.0]$:
 
@@ -39,7 +39,7 @@ $$v_x = \begin{cases} 40.0\% & \text{if target locked and } w < 0.35 \text{ (Tar
 
 ---
 
-## 💻 CLI & API Usage
+## CLI and API Usage
 
 ```bash
 # Enable Autonomous Visual Tracking

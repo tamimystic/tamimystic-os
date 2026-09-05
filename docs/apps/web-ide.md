@@ -1,10 +1,10 @@
-# 🌐 In-Browser Web Python IDE & 6.8MB Flash VFS
+# In-Browser Web Python IDE and 6.8MB Flash VFS
 
 Tamimystic OS hosts a complete, interactive **Web Python IDE** directly on its embedded web server, turning any browser into a full-featured robotics programming environment.
 
 ---
 
-## 🎨 Web IDE Features
+## Web IDE Features
 
 ```mermaid
 graph TD
@@ -28,7 +28,7 @@ graph TD
 
 ---
 
-## 📁 6.8MB LittleFS Flash Virtual File System (VFS)
+## 6.8MB LittleFS Flash Virtual File System (VFS)
 
 The storage partition is mounted under `/storage` using a high-reliability LittleFS filesystem:
 * **Wear Leveling**: Distributes write cycles across physical flash blocks to extend chip lifespan.
@@ -36,7 +36,7 @@ The storage partition is mounted under `/storage` using a high-reliability Littl
 
 ---
 
-## 💻 CLI Storage Commands
+## CLI Storage Commands
 
 ```bash
 # List all files and sizes in flash VFS

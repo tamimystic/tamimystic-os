@@ -1,10 +1,10 @@
-# ⚡ First Boot & Web Dashboard Walkthrough
+# First Boot and Web Dashboard Walkthrough
 
-Once flashing is complete, Tamimystic OS starts immediately upon reboot. This guide explains what happens during boot, how to connect to the serial console, and how to access the Glassmorphism Web Dashboard.
+Once flashing is complete, Tamimystic OS starts immediately upon reboot. This guide explains what happens during boot, how to connect to the serial console, and how to access the Web Dashboard.
 
 ---
 
-## 📟 1. Serial Monitor Output (@ 115200 Baud)
+## 1. Serial Monitor Output (@ 115200 Baud)
 
 Open your favorite serial terminal (e.g., PuTTY, Arduino Serial Monitor, `idf.py monitor`, or VS Code Serial Monitor) and configure it to:
 * **Baud Rate**: `115200`
@@ -59,7 +59,7 @@ aeron>
 
 ---
 
-## 🌐 2. Connecting to the Web Dashboard
+## 2. Connecting to the Web Dashboard
 
 Tamimystic OS hosts a high-performance, asynchronous web application directly from flash:
 
@@ -83,37 +83,37 @@ http://192.168.1.142/
 
 ---
 
-## 🖥️ 3. Dashboard Features Overview
+## 3. Dashboard Features Overview
 
 The Web Dashboard is organized into 5 primary panels:
 
 ```mermaid
 graph TD
     DASH["Web Dashboard (http://&lt;device-ip&gt;/)"]
-    DASH --> P1["🦾 Robotics Command Center (Kinematics, D-Pad, 6-DOF Arm Sliders)"]
-    DASH --> P2["🧠 Edge AI Live Stream (MJPEG Camera View, Bounding Boxes, Model Selector)"]
-    DASH --> P3["🔌 Plug & Play Matrix (Live I2C Sensor List & Dynamic Pin Re-assignment)"]
-    DASH --> P4["🐍 In-Browser Python IDE (Code Editor, Live Console & 6.8MB File Manager)"]
-    DASH --> P5["🔄 Dual-Bank OTA Manager (Upload Firmware .bin & Rollback Monitor)"]
+    DASH --> P1["1. Robotics Command Center (Kinematics, D-Pad, 6-DOF Arm Sliders)"]
+    DASH --> P2["2. Edge AI Live Stream (MJPEG Camera View, Bounding Boxes, Model Selector)"]
+    DASH --> P3["3. Plug and Play Matrix (Live I2C Sensor List and Dynamic Pin Re-assignment)"]
+    DASH --> P4["4. In-Browser Python IDE (Code Editor, Live Console and 6.8MB File Manager)"]
+    DASH --> P5["5. Dual-Bank OTA Manager (Upload Firmware .bin and Rollback Monitor)"]
 ```
 
-1. **🦾 Universal Robotics**:
+1. **Universal Robotics**:
    - Live D-Pad virtual joystick for Differential and Mecanum holonomic strafing.
    - 6-DOF Robotic Arm joint angle sliders ($J_1 - J_6$) with real-time degree feedback.
    - Interactive $(X, Y, Z)$ Cartesian Inverse Kinematics target input.
    - Emergency Stop (E-Stop) and Safety Auto-Braking indicator.
-2. **🧠 Edge AI & Vision Stream**:
+2. **Edge AI and Vision Stream**:
    - Real-time video stream from OV2640 / OV3660 camera.
    - Overlaid neural bounding boxes with class labels and confidence percentages.
    - Model switcher (Person Detector, Object Detector, Lane Follower, Gesture Classifier).
    - Auto-Follow Target toggle.
-3. **🔌 Plug & Play Hardware Matrix**:
+3. **Plug and Play Hardware Matrix**:
    - Interactive table showing all detected I2C sensors with physical addresses and status.
    - Visual software pin matrix: Click any pin (e.g., `MOTOR_L_PWM` or `I2C_SDA`) and assign it to another GPIO without restarting.
-4. **🐍 Web Python IDE**:
+4. **Web Python IDE**:
    - Full code editor with syntax highlighting.
    - Direct execution button (`Run Script`) and `Stop` button.
    - Live stdout console streaming print outputs in real-time.
    - Flash file manager to view and delete files in the 6.8MB LittleFS partition.
-5. **🔄 Dual-Bank OTA**:
+5. **Dual-Bank OTA**:
    - Single-click binary firmware upload with automatic slot switching and rollback arming.

@@ -1,10 +1,10 @@
-# 🚀 CI/CD Pipeline & GitHub Actions Automation
+# CI/CD Pipeline and GitHub Actions Automation
 
 Tamimystic OS utilizes automated GitHub Actions workflows to continuously compile firmware binaries, run tests, and publish live documentation.
 
 ---
 
-## 🔄 Automated Workflows
+## Automated Workflows
 
 ```mermaid
 graph TD
@@ -17,7 +17,7 @@ graph TD
 
 ---
 
-## 📦 Automated Artifacts
+## Automated Artifacts
 
 Every push or pull request to the `main` branch produces downloadable binary build artifacts attached directly to the GitHub Actions run:
 
@@ -28,10 +28,10 @@ Every push or pull request to the `main` branch produces downloadable binary bui
 
 ---
 
-## 🌐 Live Documentation Deployment
+## Live Documentation Deployment
 
 Whenever files in the `docs/` folder or `mkdocs.yml` are modified:
 1. GitHub Actions triggers `Deploy MkDocs Documentation`.
 2. Material for MkDocs builds the static HTML site.
 3. The generated site is automatically deployed to the `gh-pages` branch and served globally at:
-   👉 **[https://tamimystic.github.io/tamimystic-os/](https://tamimystic.github.io/tamimystic-os/)**
+   [https://tamimystic.github.io/tamimystic-os/](https://tamimystic.github.io/tamimystic-os/)

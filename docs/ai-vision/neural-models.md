@@ -1,10 +1,10 @@
-# 🧠 Onboard Neural Models & TensorFlow Lite Micro
+# Onboard Neural Models and TensorFlow Lite Micro
 
 Tamimystic OS embeds a lightweight, vector-accelerated deep learning engine powered by **TensorFlow Lite Micro (TFLM)** and **ESP-NN SIMD** vector assembly instructions.
 
 ---
 
-## ⚡ ESP-NN Vector Acceleration (Xtensa SIMD)
+## ESP-NN Vector Acceleration (Xtensa SIMD)
 
 The Xtensa LX7 dual-core processor on the ESP32-S3 contains a dedicated **128-bit SIMD Vector Math Engine**. 
 Tamimystic OS enables hardware-accelerated 8-bit quantized (`int8`) convolution kernels:
@@ -13,7 +13,7 @@ Tamimystic OS enables hardware-accelerated 8-bit quantized (`int8`) convolution 
 
 ---
 
-## 📦 Onboard Neural Models
+## Onboard Neural Models
 
 ```mermaid
 graph LR
@@ -47,7 +47,7 @@ graph LR
 
 ---
 
-## 💻 CLI Model Switching
+## CLI Model Switching
 
 ```bash
 # Switch active model to person detection

@@ -1,10 +1,10 @@
-# 🦾 6-DOF Robotic Arm & Analytical Inverse Kinematics
+# 6-DOF Robotic Arm and Analytical Inverse Kinematics
 
 Tamimystic OS embeds a closed-form, real-time **Analytical Inverse Kinematics (IK)** and **Forward Kinematics (FK)** solver specifically formulated for 6-DOF articulated robotic arms.
 
 ---
 
-## 📐 Robotic Arm Kinematic Model
+## Robotic Arm Kinematic Model
 
 A 6-DOF robotic manipulator is modeled with standard link lengths ($L_1 = 10\text{ cm}, L_2 = 12\text{ cm}, L_3 = 8\text{ cm}$):
 
@@ -28,14 +28,14 @@ A 6-DOF robotic manipulator is modeled with standard link lengths ($L_1 = 10\tex
 
 ---
 
-## 🧮 Analytical Inverse Kinematics Equations
+## Analytical Inverse Kinematics Equations
 
 Given a target 3D end-effector coordinate $(X, Y, Z)$ in centimeters and pitch angle $\theta_p$:
 
 ### 1. Base Yaw ($J_1$)
 $$J_1 = \text{atan2}(Y, X) \times \frac{180^\circ}{\pi}$$
 
-### 2. Radial Distance & Elevation ($r, z'$)
+### 2. Radial Distance and Elevation ($r, z'$)
 $$r = \sqrt{X^2 + Y^2} - L_3 \cos(\theta_p), \quad z' = Z - L_1 - L_3 \sin(\theta_p)$$
 $$D = \sqrt{r^2 + z'^2}$$
 
@@ -48,11 +48,11 @@ $$J_2 = \text{atan2}(z', r) + \text{atan2}(L_3 \sin(J_3), L_2 + L_3 \cos(J_3))$$
 ### 5. Wrist Pitch ($J_4$)
 $$J_4 = \theta_p - (J_2 + J_3)$$
 
-⚡ **Execution Performance**: Because the solver uses pure analytical closed-form trigonometry (instead of heavy numerical iterations or matrix inversions), the ESP32-S3 computes the complete 6-joint solution in **less than 0.2 milliseconds**!
+Execution Performance: Because the solver uses pure analytical closed-form trigonometry (instead of heavy numerical iterations or matrix inversions), the ESP32-S3 computes the complete 6-joint solution in **less than 0.2 milliseconds**!
 
 ---
 
-## 🎛️ PCA9685 16-Channel Servo Mapping
+## PCA9685 16-Channel Servo Mapping
 
 When a PCA9685 I2C module is detected at address `0x40`, the joints are routed automatically:
 
@@ -67,7 +67,7 @@ When a PCA9685 I2C module is detected at address `0x40`, the joints are routed a
 
 ---
 
-## 💻 CLI & Python Examples
+## CLI and Python Examples
 
 ### Direct Joint Control:
 ```bash

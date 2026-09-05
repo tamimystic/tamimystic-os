@@ -1,14 +1,14 @@
-# 🌐 HTTP REST API & Web Endpoints Reference
+# HTTP REST API and Web Endpoints Reference
 
 Tamimystic OS provides a complete HTTP REST API on Port 80, enabling integration with ROS2 nodes, mobile applications, web frontends, and IoT dashboards.
 
 ---
 
-## 📌 Endpoint Summary
+## Endpoint Summary
 
 | Category | HTTP Method | URI Path | Description |
 |---|---|---|---|
-| **Dashboard** | `GET` | `/` | Returns the HTML5 Glassmorphism Web Dashboard. |
+| **Dashboard** | `GET` | `/` | Returns the HTML5 Web Dashboard. |
 | **Robotics** | `POST` | `/api/robot/mode?mode=<diff\|mecanum\|arm>` | Switches active robot mode. |
 | | `POST` | `/api/robot/cmd_vel?vx=..&vy=..&w=..` | Commands rover / Mecanum velocity. |
 | | `POST` | `/api/robot/arm?j1=..&j2=..&j3=..` | Sets individual robotic arm joint angles. |
@@ -16,22 +16,22 @@ Tamimystic OS provides a complete HTTP REST API on Port 80, enabling integration
 | | `POST` | `/api/robot/stop` | Engages Emergency Stop. |
 | | `POST` | `/api/robot/resume` | Releases Emergency Stop. |
 | | `GET` | `/api/robot/telemetry` | Returns real-time kinematics and sensor JSON. |
-| **Vision & AI**| `GET` | `/api/camera/snapshot` | Streams live JPEG camera frame. |
+| **Vision and AI**| `GET` | `/api/camera/snapshot` | Streams live JPEG camera frame. |
 | | `POST` | `/api/ai/model?model=<person\|object\|lane>` | Switches active neural model. |
 | | `POST` | `/api/ai/track?enable=<1\|0>` | Enables / disables visual tracking loop. |
 | | `GET` | `/api/ai/status` | Returns latest detection bounding boxes JSON. |
-| **PnP & Pins** | `GET` | `/api/pnp/devices` | Returns list of discovered I2C sensors. |
+| **PnP and Pins** | `GET` | `/api/pnp/devices` | Returns list of discovered I2C sensors. |
 | | `POST` | `/api/pnp/scan` | Initiates active I2C bus scan. |
 | | `GET` | `/api/pins` | Returns pin matrix assignments JSON. |
 | | `POST` | `/api/pins/set?func=..&pin=..` | Reassigns a pin function. |
-| **Apps & VFS** | `POST` | `/api/apps/eval` | Evaluates raw Python script in request body. |
+| **Apps and VFS** | `POST` | `/api/apps/eval` | Evaluates raw Python script in request body. |
 | | `POST` | `/api/apps/stop` | Halts running Python script. |
 | | `GET` | `/api/files/list` | Returns list of files and disk usage JSON. |
 | | `POST` | `/api/files/delete?name=..` | Deletes a file from flash storage. |
 
 ---
 
-## 📊 Sample JSON Telemetry Payloads
+## Sample JSON Telemetry Payloads
 
 ### `GET /api/robot/telemetry`
 ```json

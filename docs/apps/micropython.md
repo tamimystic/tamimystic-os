@@ -1,10 +1,10 @@
-# 🐍 MicroPython Runtime & Native OS API Reference
+# MicroPython Runtime and Native OS API Reference
 
 Tamimystic OS embeds a lightweight MicroPython interpreter that enables users to write robot logic, automation scripts, and sensor loops in high-level Python with zero C++ compilation.
 
 ---
 
-## 📚 The `tamimystic` Native Module Reference
+## The `tamimystic` Native Module Reference
 
 The `tamimystic` module exposes real-time bindings to the underlying C++ OS kernel.
 
@@ -95,7 +95,7 @@ tamimystic.delay(1500)
 
 ---
 
-## 💻 CLI Python Commands
+## CLI Python Commands
 
 ```bash
 # Execute Python one-liner directly from serial CLI

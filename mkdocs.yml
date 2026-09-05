@@ -62,31 +62,31 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
-  - 🏠 Home: index.md
-  - 🚀 Getting Started:
+  - Home: index.md
+  - Getting Started:
     - Overview & Prerequisites: getting-started/index.md
     - Flashing & Installation: getting-started/installation.md
     - First Boot & Web Dashboard: getting-started/first-boot.md
     - 5-Minute Quickstart: getting-started/quickstart.md
-  - 🔌 Hardware & Pin Matrix:
+  - Hardware & Pin Matrix:
     - Dynamic Software Pin Matrix: hardware/pin-matrix.md
     - Plug & Play Sensor Catalog: hardware/pnp-sensors.md
-  - 🦾 Robotics Control Engine:
+  - Robotics Control Engine:
     - Universal Robot Brain: robotics/overview.md
     - Rover & Mecanum Kinematics: robotics/kinematics.md
     - 6-DOF Arm & Inverse Kinematics: robotics/arm-ik.md
-  - 🧠 Edge AI & Vision:
+  - Edge AI & Vision:
     - DVP Camera & PSRAM Streaming: ai-vision/camera.md
     - Onboard Neural Models: ai-vision/neural-models.md
     - Autonomous Visual Tracking: ai-vision/visual-tracking.md
-  - 🐍 Python & Application Engine:
+  - Python & Application Engine:
     - MicroPython Runtime & APIs: apps/micropython.md
     - In-Browser Web IDE & VFS: apps/web-ide.md
     - Dual-Bank OTA Firmware Update: apps/ota-updates.md
-  - 📖 API & CLI Reference:
+  - API & CLI Reference:
     - Serial CLI Command Reference: reference/cli.md
     - HTTP REST API Endpoints: reference/rest-api.md
-  - 🛠️ Developer Guide:
+  - Developer Guide:
     - Build from Source (PC & ESP32): development/build.md
     - CI/CD & GitHub Actions: development/cicd.md
-  - 🌌 Future Roadmap: roadmap.md
+  - Future Roadmap: roadmap.md
