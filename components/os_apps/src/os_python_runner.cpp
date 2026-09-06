@@ -6,6 +6,7 @@
 #include "os_pnp_manager.h"
 #include "os_scheduler.h"
 #include "os_ros2.h"
+#include "os_slam.h"
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
@@ -171,6 +172,34 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
     if (line == "tamimystic.ros2.disconnect()") {
         Ros2Node::getInstance().disconnect();
         stdout_stream += "[ROS2] Disconnected from Agent.\n";
+        return;
+    }
+
+    // 11. tamimystic.slam.nav(x, y)
+    if (line.rfind("tamimystic.slam.nav(", 0) == 0 && line.back() == ')') {
+        std::string args_str = line.substr(20, line.length() - 21);
+        std::stringstream ss(args_str);
+        std::string x_s, y_s;
+        if (std::getline(ss, x_s, ',') && std::getline(ss, y_s, ',')) {
+            float x = (float)std::atof(trim(x_s).c_str());
+            float y = (float)std::atof(trim(y_s).c_str());
+            bool ok = SlamEngine::getInstance().setNavigationGoal(x, y);
+            stdout_stream += (ok ? "[SLAM:NAV] Goal set: (" + x_s + ", " + y_s + " cm)\n" : "[SLAM:NAV] Failed: Target unreachable or out of bounds\n");
+        }
+        return;
+    }
+
+    // 12. tamimystic.slam.clear()
+    if (line == "tamimystic.slam.clear()") {
+        SlamEngine::getInstance().clearMap();
+        stdout_stream += "[SLAM] Map Cleared & Reset.\n";
+        return;
+    }
+
+    // 13. tamimystic.slam.cancel()
+    if (line == "tamimystic.slam.cancel()") {
+        SlamEngine::getInstance().cancelNavigation();
+        stdout_stream += "[SLAM:NAV] Navigation Aborted.\n";
         return;
     }
 }

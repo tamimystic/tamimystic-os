@@ -9,6 +9,7 @@
 #include "os_storage.h"
 #include "os_apps.h"
 #include "os_ros2.h"
+#include "os_slam.h"
 
 #include <iostream>
 #include <sstream>
@@ -412,6 +413,61 @@ void CLI::init() {
             Ros2Node::getInstance().disconnect();
         } else {
             hal_uart_print("Unknown ros2 subcommand.\n");
+        }
+    });
+
+    // 2D LiDAR SLAM & Autonomous Navigation Commands
+    registerCommand("slam", "2D LiDAR SLAM (slam status, slam nav <x> <y>, slam scan, slam clear)", [](const std::vector<std::string>& args) {
+        if (args.size() < 2) {
+            hal_uart_print("Usage: slam <status | nav <x_cm> <y_cm> | scan | clear | lidar <sim|rplidar|ld19>>\n");
+            return;
+        }
+        std::string sub = args[1];
+        if (sub == "status") {
+            auto st = SlamEngine::getInstance().getStatus();
+            std::stringstream ss;
+            ss << "\n=== 2D LiDAR SLAM & Navigation Status ===\n"
+               << "  Active LiDAR:       " << lidarTypeToString(st.lidar_type) << "\n"
+               << "  Grid Dimensions:    " << SLAM_GRID_WIDTH << "x" << SLAM_GRID_HEIGHT << " (10m x 10m @ 5cm/cell)\n"
+               << "  Robot Pose:         (" << st.pose.x_cm << ", " << st.pose.y_cm << " cm), Yaw: " << st.pose.yaw_deg << " deg\n"
+               << "  Explored Cells:     " << st.explored_cells_count << " / " << (SLAM_GRID_WIDTH * SLAM_GRID_HEIGHT) << " cells\n"
+               << "  Navigation Goal:    " << (st.goal.active ? "ACTIVE -> (" + std::to_string((int)st.goal.target_x_cm) + ", " + std::to_string((int)st.goal.target_y_cm) + " cm)" : "IDLE") << "\n"
+               << "  Waypoints Left:     " << st.path_waypoints_count << "\n"
+               << "=========================================\n\n";
+            hal_uart_print(ss.str().c_str());
+        } else if (sub == "nav") {
+            if (args.size() < 4) {
+                hal_uart_print("Usage: slam nav <target_x_cm> <target_y_cm>\n");
+                return;
+            }
+            float tx = (float)std::atof(args[2].c_str());
+            float ty = (float)std::atof(args[3].c_str());
+            SlamEngine::getInstance().setNavigationGoal(tx, ty);
+        } else if (sub == "scan") {
+            auto scan = SlamEngine::getInstance().getLatestScan();
+            std::stringstream ss;
+            ss << "\n=== 360 LiDAR Live Ranging Summary ===\n"
+               << "  Front (0 deg):   " << scan.ranges[0] << " m\n"
+               << "  Left  (90 deg):  " << scan.ranges[90] << " m\n"
+               << "  Rear  (180 deg): " << scan.ranges[180] << " m\n"
+               << "  Right (270 deg): " << scan.ranges[270] << " m\n"
+               << "=======================================\n\n";
+            hal_uart_print(ss.str().c_str());
+        } else if (sub == "clear") {
+            SlamEngine::getInstance().clearMap();
+            hal_uart_print("[SLAM] Occupancy Grid Map cleared.\n");
+        } else if (sub == "lidar") {
+            if (args.size() < 3) {
+                hal_uart_print("Usage: slam lidar <sim | rplidar | ld19>\n");
+                return;
+            }
+            std::string ltype = args[2];
+            if (ltype == "rplidar") SlamEngine::getInstance().setLidarType(LidarType::RPLIDAR_A1_A2);
+            else if (ltype == "ld19") SlamEngine::getInstance().setLidarType(LidarType::LD19_D300);
+            else SlamEngine::getInstance().setLidarType(LidarType::SIMULATED_360);
+            hal_uart_print(("[SLAM] LiDAR driver switched to: " + ltype + "\n").c_str());
+        } else {
+            hal_uart_print("Unknown slam subcommand.\n");
         }
     });
 

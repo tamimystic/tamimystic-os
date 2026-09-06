@@ -47,7 +47,7 @@ Native **micro-ROS (Micro XRCE-DDS)** client integrated onto ESP32-S3 and PC Sim
 
 ---
 
-## Phase 6: 2D LiDAR Driver, SLAM and Occupancy Grid Navigation
+## Phase 6: 2D LiDAR Driver, SLAM and Occupancy Grid Navigation [COMPLETED]
 
 ### Objective
 Provide full autonomous mapping, SLAM (Simultaneous Localization and Mapping), and indoor obstacle path planning directly on the ESP32-S3 using an external 2D 360° LiDAR sensor.
@@ -58,10 +58,10 @@ Provide full autonomous mapping, SLAM (Simultaneous Localization and Mapping), a
   - Memory footprint allocated in **8MB Octal PSRAM**: $200 \times 200$ grid cells ($10\text{ m} \times 10\text{ m}$ @ $5\text{ cm/cell}$ resolution).
   - Fast Bresenham ray-casting algorithm to update cell probabilities (Free, Occupied, Unknown).
 * **Real-Time Path Planning**:
-  - **Global Planner**: $A^*$ (A-Star) search algorithm for optimal shortest path generation.
-  - **Local Obstacle Avoidance**: Dynamic Window Approach (DWA) to steer around sudden moving obstacles.
+  - **Global Planner**: $A^*$ (A-Star) search algorithm for optimal shortest path generation with dynamic obstacle inflation.
+  - **Local Obstacle Avoidance**: Pure-pursuit and Dynamic Window Approach (DWA) to steer around obstacles.
 * **Live Web Map Visualization**:
-  - Real-time 2D Canvas rendering on the Web Dashboard showing the robot position, orientation heading, and live laser scan points.
+  - Real-time 2D Canvas rendering on the Web Dashboard showing the robot position, orientation heading, explored cells, A* trajectory, and interactive click-to-navigate.
 
 ---
 

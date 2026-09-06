@@ -8,6 +8,7 @@
 #include "os_pnp_manager.h"
 #include "os_pin_matrix.h"
 #include "os_ros2.h"
+#include "os_slam.h"
 #include "dashboard_html.h"
 #include "esp_http_server.h"
 #include <string>
@@ -322,13 +323,83 @@ static esp_err_t ros2_disconnect_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+// ================= SLAM Handlers =================
+static esp_err_t slam_status_handler(httpd_req_t *req) {
+    std::string json = SlamEngine::getInstance().getStatusJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t slam_map_handler(httpd_req_t *req) {
+    std::string json = SlamEngine::getInstance().getCompressedMapJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t slam_nav_handler(httpd_req_t *req) {
+    char query[128];
+    char x_str[16] = {0};
+    char y_str[16] = {0};
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "x", x_str, sizeof(x_str));
+        httpd_query_key_value(query, "y", y_str, sizeof(y_str));
+    }
+    if (x_str[0] && y_str[0]) {
+        float x = (float)std::atof(x_str);
+        float y = (float)std::atof(y_str);
+        bool ok = SlamEngine::getInstance().setNavigationGoal(x, y);
+        httpd_resp_set_type(req, "application/json");
+        if (ok) {
+            httpd_resp_send(req, "{\"status\":\"ok\",\"navigating\":true}", HTTPD_RESP_USE_STRLEN);
+        } else {
+            httpd_resp_send(req, "{\"status\":\"error\",\"message\":\"Target unreachable\"}", HTTPD_RESP_USE_STRLEN);
+        }
+        return ESP_OK;
+    }
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"error\",\"message\":\"Missing x or y\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t slam_clear_handler(httpd_req_t *req) {
+    SlamEngine::getInstance().clearMap();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t slam_cancel_handler(httpd_req_t *req) {
+    SlamEngine::getInstance().cancelNavigation();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t slam_lidar_handler(httpd_req_t *req) {
+    char query[64];
+    char type_str[16] = {0};
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "type", type_str, sizeof(type_str));
+    }
+    std::string t(type_str);
+    if (t == "rplidar") SlamEngine::getInstance().setLidarType(LidarType::RPLIDAR_A1_A2);
+    else if (t == "ld19" || t == "ld06") SlamEngine::getInstance().setLidarType(LidarType::LD19_D300);
+    else SlamEngine::getInstance().setLidarType(LidarType::SIMULATED_360);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 void WebServer::start() {
     if (is_running) return;
     
     hal_uart_print("[WEB] Starting ESP32 HTTP Server on Port 80...\n");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 40;
+    config.max_uri_handlers = 50;
     
     if (httpd_start(&server, &config) == ESP_OK) {
         httpd_uri_t uri_dash = { .uri = "/", .method = HTTP_GET, .handler = dashboard_get_handler, .user_ctx = NULL };
@@ -359,6 +430,13 @@ void WebServer::start() {
         httpd_uri_t uri_ros2_connect = { .uri = "/api/ros2/connect", .method = HTTP_POST, .handler = ros2_connect_handler, .user_ctx = NULL };
         httpd_uri_t uri_ros2_disconnect = { .uri = "/api/ros2/disconnect", .method = HTTP_POST, .handler = ros2_disconnect_handler, .user_ctx = NULL };
 
+        httpd_uri_t uri_slam_status = { .uri = "/api/slam/status", .method = HTTP_GET, .handler = slam_status_handler, .user_ctx = NULL };
+        httpd_uri_t uri_slam_map = { .uri = "/api/slam/map", .method = HTTP_GET, .handler = slam_map_handler, .user_ctx = NULL };
+        httpd_uri_t uri_slam_nav = { .uri = "/api/slam/nav", .method = HTTP_POST, .handler = slam_nav_handler, .user_ctx = NULL };
+        httpd_uri_t uri_slam_clear = { .uri = "/api/slam/clear", .method = HTTP_POST, .handler = slam_clear_handler, .user_ctx = NULL };
+        httpd_uri_t uri_slam_cancel = { .uri = "/api/slam/cancel", .method = HTTP_POST, .handler = slam_cancel_handler, .user_ctx = NULL };
+        httpd_uri_t uri_slam_lidar = { .uri = "/api/slam/lidar", .method = HTTP_POST, .handler = slam_lidar_handler, .user_ctx = NULL };
+
         httpd_register_uri_handler(server, &uri_dash);
         httpd_register_uri_handler(server, &uri_pnp_dev);
         httpd_register_uri_handler(server, &uri_pnp_scan);
@@ -382,6 +460,12 @@ void WebServer::start() {
         httpd_register_uri_handler(server, &uri_ros2_status);
         httpd_register_uri_handler(server, &uri_ros2_connect);
         httpd_register_uri_handler(server, &uri_ros2_disconnect);
+        httpd_register_uri_handler(server, &uri_slam_status);
+        httpd_register_uri_handler(server, &uri_slam_map);
+        httpd_register_uri_handler(server, &uri_slam_nav);
+        httpd_register_uri_handler(server, &uri_slam_clear);
+        httpd_register_uri_handler(server, &uri_slam_cancel);
+        httpd_register_uri_handler(server, &uri_slam_lidar);
 
         hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2 & File System endpoints active.\n");
         is_running = true;

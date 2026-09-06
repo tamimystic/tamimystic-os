@@ -365,7 +365,43 @@ print("Finished.")</textarea>
         </div>
     </div>
 
-    <!-- Card 8: Live Event Logs (Full Width) -->
+    <!-- Card 8: 2D LiDAR SLAM & Autonomous A* Navigation -->
+    <div class="card">
+        <div class="card-header">
+            <h2>🗺️ 2D LiDAR SLAM & A* Navigation</h2>
+            <span class="brand-chip" id="slam-nav-pill" style="color:var(--success); border-color:var(--success);">MAPPING ACTIVE</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="position:relative; width:100%; height:260px; background:#080c14; border-radius:10px; border:1px solid var(--border); overflow:hidden; display:flex; justify-content:center; align-items:center;">
+                <canvas id="slam-canvas" width="280" height="260" style="touch-action:none; cursor:crosshair; background:#080c14;"></canvas>
+                <div style="position:absolute; bottom:6px; left:8px; font-size:10px; color:var(--text-muted); background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:4px;">Click anywhere to Navigate (A*)</div>
+                <div id="slam-goal-badge" style="position:absolute; top:6px; right:8px; font-size:10px; color:var(--primary); font-family:monospace; background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:4px;">Goal: Idle</div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <select class="ai-select" id="slam-lidar-select" style="flex:2;">
+                    <option value="sim">Simulated 360° LiDAR (Physics)</option>
+                    <option value="rplidar">RPLiDAR A1 / A2 (UART 115200)</option>
+                    <option value="ld19">LD19 / D300 LiDAR (UART 230400)</option>
+                </select>
+                <button class="btn-action" id="btn-slam-clear" style="flex:1; background:#334155; color:#fff; justify-content:center;">Clear Map</button>
+                <button class="btn-action" id="btn-slam-cancel" style="flex:1; background:var(--danger); color:#fff; justify-content:center;">Abort Nav</button>
+            </div>
+
+            <div class="hud-panel">
+                <div class="hud-row">
+                    <span>Robot Pose (X, Y, Yaw)</span>
+                    <span class="hud-val" id="slam-pose-val">0.0, 0.0 cm, 0.0°</span>
+                </div>
+                <div class="hud-row">
+                    <span>SLAM Exploration / Scans</span>
+                    <span class="hud-val" id="slam-stats-val">0 cells / 0 scans</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 9: Live Event Logs (Full Width) -->
     <div class="card" style="grid-column: 1 / -1;">
         <div class="card-header">
             <h2>📜 Real-Time System Event Logs</h2>
@@ -826,13 +862,185 @@ print("Pick complete!")`;
             .then(() => setTimeout(fetchRos2Status, 500));
     });
 
+    // 13. 2D LiDAR SLAM & A* Navigation
+    const slamCanvas = document.getElementById('slam-canvas');
+    const sCtx = slamCanvas.getContext('2d');
+    const GRID_SIZE = 200;
+    const RESOLUTION_CM = 5.0;
+
+    function renderSlamMap(data) {
+        if (!data) return;
+        const w = slamCanvas.width;
+        const h = slamCanvas.height;
+        const scaleX = w / GRID_SIZE;
+        const scaleY = h / GRID_SIZE;
+
+        sCtx.fillStyle = '#080c14';
+        sCtx.fillRect(0, 0, w, h);
+
+        sCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        sCtx.lineWidth = 1;
+        for (let i = 0; i <= GRID_SIZE; i += 20) {
+            sCtx.beginPath(); sCtx.moveTo(i * scaleX, 0); sCtx.lineTo(i * scaleX, h); sCtx.stroke();
+            sCtx.beginPath(); sCtx.moveTo(0, i * scaleY); sCtx.lineTo(w, i * scaleY); sCtx.stroke();
+        }
+
+        if (data.free) {
+            sCtx.fillStyle = '#1e293b';
+            for (let i = 0; i < data.free.length; i++) {
+                const gx = data.free[i][0];
+                const gy = data.free[i][1];
+                sCtx.fillRect(gx * scaleX, (GRID_SIZE - 1 - gy) * scaleY, Math.max(1, scaleX), Math.max(1, scaleY));
+            }
+        }
+
+        if (data.occupied) {
+            sCtx.fillStyle = '#f87171';
+            for (let i = 0; i < data.occupied.length; i++) {
+                const gx = data.occupied[i][0];
+                const gy = data.occupied[i][1];
+                sCtx.fillRect(gx * scaleX, (GRID_SIZE - 1 - gy) * scaleY, Math.max(2, scaleX * 1.5), Math.max(2, scaleY * 1.5));
+            }
+        }
+
+        if (data.path && data.path.length > 0) {
+            sCtx.strokeStyle = '#38bdf8';
+            sCtx.lineWidth = 2;
+            sCtx.beginPath();
+            for (let i = 0; i < data.path.length; i++) {
+                const pt = data.path[i];
+                const gx = Math.round(data.origin_x + pt.x / data.res_cm);
+                const gy = Math.round(data.origin_y + pt.y / data.res_cm);
+                const px = gx * scaleX;
+                const py = (GRID_SIZE - 1 - gy) * scaleY;
+                if (i === 0) sCtx.moveTo(px, py);
+                else sCtx.lineTo(px, py);
+            }
+            sCtx.stroke();
+        }
+
+        if (data.goal && data.goal.active) {
+            const gx = Math.round(data.origin_x + data.goal.x / data.res_cm);
+            const gy = Math.round(data.origin_y + data.goal.y / data.res_cm);
+            const px = gx * scaleX;
+            const py = (GRID_SIZE - 1 - gy) * scaleY;
+
+            sCtx.beginPath();
+            sCtx.arc(px, py, 5, 0, Math.PI * 2);
+            sCtx.fillStyle = '#fbbf24';
+            sCtx.shadowColor = 'rgba(251, 191, 36, 0.8)';
+            sCtx.shadowBlur = 8;
+            sCtx.fill();
+            sCtx.shadowBlur = 0;
+        }
+
+        if (data.robot) {
+            const gx = Math.round(data.origin_x + data.robot.x / data.res_cm);
+            const gy = Math.round(data.origin_y + data.robot.y / data.res_cm);
+            const px = gx * scaleX;
+            const py = (GRID_SIZE - 1 - gy) * scaleY;
+            const headingRad = (data.robot.yaw * Math.PI) / 180.0;
+
+            sCtx.save();
+            sCtx.translate(px, py);
+            sCtx.rotate(-headingRad);
+
+            sCtx.beginPath();
+            sCtx.moveTo(7, 0);
+            sCtx.lineTo(-5, -5);
+            sCtx.lineTo(-5, 5);
+            sCtx.closePath();
+            sCtx.fillStyle = '#38bdf8';
+            sCtx.shadowColor = 'rgba(56, 189, 248, 0.9)';
+            sCtx.shadowBlur = 10;
+            sCtx.fill();
+            sCtx.shadowBlur = 0;
+
+            sCtx.restore();
+        }
+    }
+
+    function fetchSlamData() {
+        fetch('/api/slam/map')
+            .then(res => res.json())
+            .then(data => {
+                renderSlamMap(data);
+                if (data.robot) {
+                    document.getElementById('slam-pose-val').innerText = `${data.robot.x.toFixed(1)}, ${data.robot.y.toFixed(1)} cm, ${data.robot.yaw.toFixed(0)}°`;
+                }
+                const pill = document.getElementById('slam-nav-pill');
+                const badge = document.getElementById('slam-goal-badge');
+                if (data.navigating) {
+                    pill.innerText = "NAVIGATING (A*)";
+                    pill.style.color = "var(--primary)";
+                    pill.style.borderColor = "var(--primary)";
+                    badge.innerText = `Nav: (${data.goal.x.toFixed(0)}, ${data.goal.y.toFixed(0)})`;
+                } else if (data.goal && data.goal.active) {
+                    pill.innerText = "GOAL REACHED";
+                    pill.style.color = "var(--success)";
+                    pill.style.borderColor = "var(--success)";
+                    badge.innerText = `Reached (${data.goal.x.toFixed(0)}, ${data.goal.y.toFixed(0)})`;
+                } else {
+                    pill.innerText = "MAPPING ACTIVE";
+                    pill.style.color = "var(--success)";
+                    pill.style.borderColor = "var(--success)";
+                    badge.innerText = "Goal: Idle";
+                }
+            })
+            .catch(() => {});
+
+        fetch('/api/slam/status')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('slam-stats-val').innerText = `${data.explored_cells} cells / ${data.total_scans} scans`;
+            })
+            .catch(() => {});
+    }
+
+    slamCanvas.addEventListener('click', (e) => {
+        const rect = slamCanvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        const scaleX = slamCanvas.width / GRID_SIZE;
+        const scaleY = slamCanvas.height / GRID_SIZE;
+
+        const gx = Math.floor(clickX / scaleX);
+        const gy = GRID_SIZE - 1 - Math.floor(clickY / scaleY);
+
+        const worldX = (gx - 100) * RESOLUTION_CM;
+        const worldY = (gy - 100) * RESOLUTION_CM;
+
+        log(`[SLAM:NAV] Set Goal: (${worldX.toFixed(1)}, ${worldY.toFixed(1)} cm)`);
+        fetch(`/api/slam/nav?x=${worldX.toFixed(1)}&y=${worldY.toFixed(1)}`, { method: 'POST' })
+            .then(() => setTimeout(fetchSlamData, 200));
+    });
+
+    document.getElementById('btn-slam-clear').addEventListener('click', () => {
+        log("[SLAM] Clearing Grid Map...");
+        fetch('/api/slam/clear', { method: 'POST' }).then(() => fetchSlamData());
+    });
+
+    document.getElementById('btn-slam-cancel').addEventListener('click', () => {
+        log("[SLAM:NAV] Navigation Aborted.");
+        fetch('/api/slam/cancel', { method: 'POST' }).then(() => fetchSlamData());
+    });
+
+    document.getElementById('slam-lidar-select').addEventListener('change', (e) => {
+        const type = e.target.value;
+        log(`[SLAM:LIDAR] LiDAR driver set: ${type}`);
+        fetch(`/api/slam/lidar?type=${type}`, { method: 'POST' });
+    });
+
     fetchPnPDevices();
     fetchPinMatrix();
     fetchFiles();
     fetchRos2Status();
+    fetchSlamData();
     setInterval(fetchPnPDevices, 4000);
     setInterval(fetchTelemetry, 1000);
     setInterval(fetchRos2Status, 2000);
+    setInterval(fetchSlamData, 1500);
 </script>
 
 </body>

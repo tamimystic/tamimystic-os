@@ -15,6 +15,7 @@
 #include "os_robotics.h"
 #include "os_ai.h"
 #include "os_ros2.h"
+#include "os_slam.h"
 
 using namespace TamimysticOS;
 
@@ -53,6 +54,9 @@ void os_core_start() {
 
     // 9. Initialize micro-ROS & ROS 2 Distributed Robotics Node
     Ros2Node::getInstance().init();
+
+    // 10. Initialize 2D LiDAR & Occupancy Grid SLAM Navigation Engine
+    SlamEngine::getInstance().init();
 
     // Background Task for System Heartbeat
     OSScheduler::getInstance().createTask("sys_heartbeat", 2048, 1, CORE_0, []() {

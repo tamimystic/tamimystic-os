@@ -8,6 +8,7 @@
 #include "os_pnp_manager.h"
 #include "os_pin_matrix.h"
 #include "os_ros2.h"
+#include "os_slam.h"
 #include <thread>
 #include <atomic>
 #include "httplib.h"
@@ -299,6 +300,64 @@ void WebServer::start() {
         };
         svr->Post("/api/ros2/disconnect", handle_ros2_disconnect);
         svr->Get("/api/ros2/disconnect", handle_ros2_disconnect);
+
+        // ================= 2D LiDAR SLAM & Navigation API =================
+        // 1. SLAM Status
+        svr->Get("/api/slam/status", [](const httplib::Request& req, httplib::Response& res) {
+            std::string json = SlamEngine::getInstance().getStatusJson();
+            res.set_content(json, "application/json");
+        });
+
+        // 2. SLAM Compressed Grid Map & Waypoints
+        svr->Get("/api/slam/map", [](const httplib::Request& req, httplib::Response& res) {
+            std::string json = SlamEngine::getInstance().getCompressedMapJson();
+            res.set_content(json, "application/json");
+        });
+
+        // 3. SLAM Navigation Goal (Click-to-Nav)
+        auto handle_slam_nav = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("x") && req.has_param("y")) {
+                float x = (float)std::atof(req.get_param_value("x").c_str());
+                float y = (float)std::atof(req.get_param_value("y").c_str());
+                bool ok = SlamEngine::getInstance().setNavigationGoal(x, y);
+                res.set_content(ok ? "{\"status\":\"ok\",\"navigating\":true}" : "{\"status\":\"error\",\"message\":\"Target unreachable\"}", "application/json");
+            } else {
+                res.set_content("{\"status\":\"error\",\"message\":\"Missing x or y parameter\"}", "application/json");
+            }
+        };
+        svr->Post("/api/slam/nav", handle_slam_nav);
+        svr->Get("/api/slam/nav", handle_slam_nav);
+
+        // 4. SLAM Map Clear
+        auto handle_slam_clear = [](const httplib::Request& req, httplib::Response& res) {
+            SlamEngine::getInstance().clearMap();
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/slam/clear", handle_slam_clear);
+        svr->Get("/api/slam/clear", handle_slam_clear);
+
+        // 5. SLAM Cancel Navigation
+        auto handle_slam_cancel = [](const httplib::Request& req, httplib::Response& res) {
+            SlamEngine::getInstance().cancelNavigation();
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/slam/cancel", handle_slam_cancel);
+        svr->Get("/api/slam/cancel", handle_slam_cancel);
+
+        // 6. SLAM LiDAR Source Switch
+        auto handle_slam_lidar = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("type")) {
+                std::string t = req.get_param_value("type");
+                if (t == "rplidar") SlamEngine::getInstance().setLidarType(LidarType::RPLIDAR_A1_A2);
+                else if (t == "ld19" || t == "ld06") SlamEngine::getInstance().setLidarType(LidarType::LD19_D300);
+                else SlamEngine::getInstance().setLidarType(LidarType::SIMULATED_360);
+                res.set_content("{\"status\":\"ok\"}", "application/json");
+            } else {
+                res.set_content("{\"status\":\"error\"}", "application/json");
+            }
+        };
+        svr->Post("/api/slam/lidar", handle_slam_lidar);
+        svr->Get("/api/slam/lidar", handle_slam_lidar);
 
         // API for File Upload (OTA / Models / Apps)
         svr->Post("/api/upload", [](const httplib::Request& req, httplib::Response& res) {

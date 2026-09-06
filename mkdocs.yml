@@ -76,6 +76,7 @@ nav:
     - Rover & Mecanum Kinematics: robotics/kinematics.md
     - 6-DOF Arm & Inverse Kinematics: robotics/arm-ik.md
     - ROS 2 and micro-ROS: robotics/ros2.md
+    - 2D LiDAR and SLAM Navigation: robotics/slam-nav.md
   - Edge AI & Vision:
     - DVP Camera & PSRAM Streaming: ai-vision/camera.md
     - Onboard Neural Models: ai-vision/neural-models.md

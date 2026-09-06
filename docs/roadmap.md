@@ -38,17 +38,17 @@ graph TD
 
 ---
 
-## Phase 6: 2D LiDAR Driver, SLAM and Occupancy Grid Navigation
+## Phase 6: 2D LiDAR Driver, SLAM and Occupancy Grid Navigation [COMPLETED]
 
 * **Hardware Support**: UART DMA driver for affordable 360° 2D LiDARs (RPLiDAR A1/A2, LD19 / D300, YDLidar X2/X4).
 * **2D Occupancy Grid Map**:
   - Memory footprint allocated in **8MB Octal PSRAM**: $200 \times 200$ grid cells ($10\text{ m} \times 10\text{ m}$ @ $5\text{ cm/cell}$ resolution).
   - Fast Bresenham ray-casting algorithm to update cell probabilities (Free, Occupied, Unknown).
 * **Real-Time Path Planning**:
-  - **Global Planner**: $A^*$ (A-Star) search algorithm for optimal shortest path generation.
-  - **Local Obstacle Avoidance**: Dynamic Window Approach (DWA) to steer around sudden moving obstacles.
+  - **Global Planner**: $A^*$ (A-Star) search algorithm for optimal shortest path generation with dynamic safety inflation.
+  - **Local Obstacle Avoidance**: Pure-pursuit and Dynamic Window Approach (DWA) to steer around obstacles.
 * **Live Web Map Visualization**:
-  - Real-time 2D Canvas rendering on the Web Dashboard showing the robot position, orientation heading, and live laser scan points.
+  - Real-time 2D Canvas rendering on the Web Dashboard showing the robot position, orientation heading, explored cells, A* trajectory, and interactive click-to-navigate.
 
 ---
 
