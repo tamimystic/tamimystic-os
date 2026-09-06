@@ -14,6 +14,7 @@
 #include "os_pin_matrix.h"
 #include "os_robotics.h"
 #include "os_ai.h"
+#include "os_ros2.h"
 
 using namespace TamimysticOS;
 
@@ -49,6 +50,9 @@ void os_core_start() {
     // 8. Initialize Robotics & AI Subsystems
     RobotController::getInstance().init();
     AIModule::getInstance().init();
+
+    // 9. Initialize micro-ROS & ROS 2 Distributed Robotics Node
+    Ros2Node::getInstance().init();
 
     // Background Task for System Heartbeat
     OSScheduler::getInstance().createTask("sys_heartbeat", 2048, 1, CORE_0, []() {

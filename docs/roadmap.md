@@ -24,7 +24,7 @@ graph TD
 
 ---
 
-## Phase 5: micro-ROS and ROS2 Native Distributed Robotics
+## Phase 5: micro-ROS and ROS2 Native Distributed Robotics [COMPLETED]
 
 * **DDS Transport Layer**: Asynchronous UDP over Wi-Fi / Serial transport communicating with the `micro-ros-agent`.
 * **Execution Model**: Dedicated FreeRTOS micro-ROS executor task running on **Core 0**.

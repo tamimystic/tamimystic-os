@@ -323,7 +323,49 @@ print("Finished.")</textarea>
         </div>
     </div>
 
-    <!-- Card 7: Live Event Logs (Full Width) -->
+    <!-- Card 7: micro-ROS & ROS 2 Distributed Robotics Node -->
+    <div class="card">
+        <div class="card-header">
+            <h2>🤖 micro-ROS & ROS 2 Node</h2>
+            <span class="brand-chip" id="ros2-status-pill" style="color:var(--warning); border-color:var(--warning);">DISCONNECTED</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; gap:8px;">
+                <div style="flex:2; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:11px; color:var(--text-muted);">Agent IP Address</span>
+                    <input type="text" id="ros2-agent-ip" class="ik-input" value="192.168.1.100">
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:11px; color:var(--text-muted);">UDP Port</span>
+                    <input type="number" id="ros2-agent-port" class="ik-input" value="8888">
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:11px; color:var(--text-muted);">Domain ID</span>
+                    <input type="number" id="ros2-domain-id" class="ik-input" value="0">
+                </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-action" id="btn-ros2-connect" style="flex:1; background:var(--success); color:#022c22; justify-content:center;">⚡ Connect Agent</button>
+                <button class="btn-action" id="btn-ros2-disconnect" style="flex:1; background:#334155; color:#fff; justify-content:center;">Disconnect</button>
+            </div>
+            <div class="hud-panel" style="margin-top:4px;">
+                <div class="hud-row">
+                    <span>Active Topics</span>
+                    <span class="hud-val" style="color:var(--accent);">6 Topics (DDS)</span>
+                </div>
+                <div class="hud-row">
+                    <span>Messages Sent / Recv</span>
+                    <span class="hud-val" id="ros2-stats-text">0 / 0</span>
+                </div>
+                <div class="hud-row">
+                    <span>Live Odometry (X, Y, Yaw)</span>
+                    <span class="hud-val" id="ros2-odom-text">0.00, 0.00, 0.00 rad</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 8: Live Event Logs (Full Width) -->
     <div class="card" style="grid-column: 1 / -1;">
         <div class="card-header">
             <h2>📜 Real-Time System Event Logs</h2>
@@ -333,7 +375,8 @@ print("Finished.")</textarea>
             <p><span class="log-time">00:00:01</span> [BOOT] Tamimystic OS initialized on ESP32-S3-N16R8 (16MB Flash, 8MB PSRAM).</p>
             <p><span class="log-time">00:00:02</span> [ROBOTICS] Core 1 real-time 50Hz kinematics loop running.</p>
             <p><span class="log-time">00:00:03</span> [AI] TensorFlow Lite Micro with ESP-NN SIMD active (20 FPS).</p>
-            <p><span class="log-time">00:00:04</span> [APPS] MicroPython and WASM runtime engine active.</p>
+            <p><span class="log-time">00:00:04</span> [ROS2] micro-ROS Node initialized with 6 active DDS topics.</p>
+            <p><span class="log-time">00:00:05</span> [APPS] MicroPython and WASM runtime engine active.</p>
         </div>
     </div>
 </div>
@@ -737,11 +780,59 @@ print("Pick complete!")`;
             .catch(() => {});
     }
 
+    // 12. Fetch ROS 2 Status
+    function fetchRos2Status() {
+        fetch('/api/ros2/status')
+            .then(res => res.json())
+            .then(data => {
+                const pill = document.getElementById('ros2-status-pill');
+                if (data.connected) {
+                    pill.innerText = "RUNNING";
+                    pill.style.color = "var(--success)";
+                    pill.style.borderColor = "var(--success)";
+                } else if (data.state === "CONNECTING") {
+                    pill.innerText = "CONNECTING";
+                    pill.style.color = "var(--warning)";
+                    pill.style.borderColor = "var(--warning)";
+                } else {
+                    pill.innerText = "DISCONNECTED";
+                    pill.style.color = "var(--text-muted)";
+                    pill.style.borderColor = "var(--border)";
+                }
+
+                if (data.msgs_sent !== undefined && data.msgs_received !== undefined) {
+                    document.getElementById('ros2-stats-text').innerText = `${data.msgs_sent} / ${data.msgs_received}`;
+                }
+
+                if (data.odom) {
+                    document.getElementById('ros2-odom-text').innerText = `${data.odom.x.toFixed(2)}, ${data.odom.y.toFixed(2)}, ${data.odom.yaw_rad.toFixed(2)} rad`;
+                }
+            })
+            .catch(() => {});
+    }
+
+    document.getElementById('btn-ros2-connect').addEventListener('click', () => {
+        const ip = document.getElementById('ros2-agent-ip').value;
+        const port = document.getElementById('ros2-agent-port').value;
+        const dom = document.getElementById('ros2-domain-id').value;
+        log(`[ROS2] Initiating connection to Agent ${ip}:${port}...`);
+        fetch(`/api/ros2/connect?ip=${ip}&port=${port}&domain=${dom}`, { method: 'POST' })
+            .then(() => setTimeout(fetchRos2Status, 500));
+    });
+
+    document.getElementById('btn-ros2-disconnect').addEventListener('click', () => {
+        log("[ROS2] Disconnecting from Agent...");
+        fetch('/api/ros2/disconnect', { method: 'POST' })
+            .then(() => setTimeout(fetchRos2Status, 500));
+    });
+
     fetchPnPDevices();
     fetchPinMatrix();
     fetchFiles();
+    fetchRos2Status();
     setInterval(fetchPnPDevices, 4000);
     setInterval(fetchTelemetry, 1000);
+    setInterval(fetchRos2Status, 2000);
 </script>
 
 </body>

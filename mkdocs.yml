@@ -75,6 +75,7 @@ nav:
     - Universal Robot Brain: robotics/overview.md
     - Rover & Mecanum Kinematics: robotics/kinematics.md
     - 6-DOF Arm & Inverse Kinematics: robotics/arm-ik.md
+    - ROS 2 and micro-ROS: robotics/ros2.md
   - Edge AI & Vision:
     - DVP Camera & PSRAM Streaming: ai-vision/camera.md
     - Onboard Neural Models: ai-vision/neural-models.md

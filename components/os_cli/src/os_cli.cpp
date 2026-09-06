@@ -8,6 +8,7 @@
 #include "os_camera.h"
 #include "os_storage.h"
 #include "os_apps.h"
+#include "os_ros2.h"
 
 #include <iostream>
 #include <sstream>
@@ -374,6 +375,44 @@ void CLI::init() {
         hal_uart_print("  Firmware Version:     v2.4.0-ULTRA (Dual-Core LX7)\n");
         hal_uart_print("  OTA Boot State:       VALIDATED (Rollback Armed)\n");
         hal_uart_print("=====================================\n\n");
+    });
+
+    // micro-ROS & ROS 2 Distributed Robotics Commands
+    registerCommand("ros2", "micro-ROS & ROS 2 Client (ros2 status, ros2 connect <ip> [port] [domain], ros2 disconnect)", [](const std::vector<std::string>& args) {
+        if (args.size() < 2) {
+            hal_uart_print("Usage: ros2 <status | connect <ip> [port] [domain] | disconnect>\n");
+            return;
+        }
+        std::string sub = args[1];
+        if (sub == "status") {
+            auto cfg = Ros2Node::getInstance().getConfig();
+            auto stats = Ros2Node::getInstance().getStats();
+            bool conn = Ros2Node::getInstance().isConnected();
+
+            std::stringstream ss;
+            ss << "\n=== micro-ROS & ROS 2 Node Status ===\n"
+               << "  Node State:      " << ros2StateToString(Ros2Node::getInstance().getState()) << (conn ? " (ACTIVE)" : " (IDLE)") << "\n"
+               << "  Agent Target:    " << cfg.agent_ip << ":" << cfg.agent_port << " (Domain ID: " << (int)cfg.domain_id << ")\n"
+               << "  Node Name:       " << cfg.node_name << "\n"
+               << "  Messages Sent:   " << stats.msgs_sent << "\n"
+               << "  Messages Recv:   " << stats.msgs_received << "\n"
+               << "  Active Topics:   /cmd_vel (sub), /odom (pub), /joint_states (pub), /imu/data (pub), /scan (pub)\n"
+               << "=====================================\n\n";
+            hal_uart_print(ss.str().c_str());
+        } else if (sub == "connect") {
+            if (args.size() < 3) {
+                Ros2Node::getInstance().connect();
+            } else {
+                std::string ip = args[2];
+                uint16_t port = (args.size() >= 4) ? (uint16_t)std::atoi(args[3].c_str()) : 8888;
+                uint8_t domain = (args.size() >= 5) ? (uint8_t)std::atoi(args[4].c_str()) : 0;
+                Ros2Node::getInstance().connect(ip, port, domain);
+            }
+        } else if (sub == "disconnect") {
+            Ros2Node::getInstance().disconnect();
+        } else {
+            hal_uart_print("Unknown ros2 subcommand.\n");
+        }
     });
 
 #ifdef OS_TARGET_NATIVE

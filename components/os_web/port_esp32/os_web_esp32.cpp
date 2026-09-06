@@ -7,6 +7,7 @@
 #include "os_apps.h"
 #include "os_pnp_manager.h"
 #include "os_pin_matrix.h"
+#include "os_ros2.h"
 #include "dashboard_html.h"
 #include "esp_http_server.h"
 #include <string>
@@ -286,6 +287,41 @@ static esp_err_t files_delete_handler(httpd_req_t *req) {
     return ESP_FAIL;
 }
 
+// Handlers for micro-ROS & ROS 2
+static esp_err_t ros2_status_handler(httpd_req_t *req) {
+    std::string json = Ros2Node::getInstance().getStatusJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t ros2_connect_handler(httpd_req_t *req) {
+    char query[128];
+    char ip_str[32] = "192.168.1.100";
+    char port_str[16] = "8888";
+    char dom_str[8] = "0";
+
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "ip", ip_str, sizeof(ip_str));
+        httpd_query_key_value(query, "port", port_str, sizeof(port_str));
+        httpd_query_key_value(query, "domain", dom_str, sizeof(dom_str));
+    }
+    uint16_t port = (uint16_t)std::atoi(port_str);
+    uint8_t domain = (uint8_t)std::atoi(dom_str);
+    Ros2Node::getInstance().connect(ip_str, port, domain);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t ros2_disconnect_handler(httpd_req_t *req) {
+    Ros2Node::getInstance().disconnect();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 void WebServer::start() {
     if (is_running) return;
     
@@ -319,6 +355,10 @@ void WebServer::start() {
         httpd_uri_t uri_files_list = { .uri = "/api/files/list", .method = HTTP_GET, .handler = files_list_handler, .user_ctx = NULL };
         httpd_uri_t uri_files_delete = { .uri = "/api/files/delete", .method = HTTP_POST, .handler = files_delete_handler, .user_ctx = NULL };
 
+        httpd_uri_t uri_ros2_status = { .uri = "/api/ros2/status", .method = HTTP_GET, .handler = ros2_status_handler, .user_ctx = NULL };
+        httpd_uri_t uri_ros2_connect = { .uri = "/api/ros2/connect", .method = HTTP_POST, .handler = ros2_connect_handler, .user_ctx = NULL };
+        httpd_uri_t uri_ros2_disconnect = { .uri = "/api/ros2/disconnect", .method = HTTP_POST, .handler = ros2_disconnect_handler, .user_ctx = NULL };
+
         httpd_register_uri_handler(server, &uri_dash);
         httpd_register_uri_handler(server, &uri_pnp_dev);
         httpd_register_uri_handler(server, &uri_pnp_scan);
@@ -339,8 +379,11 @@ void WebServer::start() {
         httpd_register_uri_handler(server, &uri_apps_stop);
         httpd_register_uri_handler(server, &uri_files_list);
         httpd_register_uri_handler(server, &uri_files_delete);
+        httpd_register_uri_handler(server, &uri_ros2_status);
+        httpd_register_uri_handler(server, &uri_ros2_connect);
+        httpd_register_uri_handler(server, &uri_ros2_disconnect);
 
-        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE & File System endpoints active.\n");
+        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2 & File System endpoints active.\n");
         is_running = true;
     } else {
         hal_uart_print("[WEB] Failed to start HTTP Server!\n");

@@ -7,6 +7,7 @@
 #include "os_apps.h"
 #include "os_pnp_manager.h"
 #include "os_pin_matrix.h"
+#include "os_ros2.h"
 #include <thread>
 #include <atomic>
 #include "httplib.h"
@@ -272,6 +273,32 @@ void WebServer::start() {
             ss << "{\"status\":\"ok\",\"total\":" << stats.total_bytes << ",\"used\":" << stats.used_bytes << ",\"free\":" << stats.free_bytes << "}";
             res.set_content(ss.str(), "application/json");
         });
+
+        // ================= micro-ROS & ROS 2 API =================
+        // 1. ROS 2 Status
+        svr->Get("/api/ros2/status", [](const httplib::Request& req, httplib::Response& res) {
+            std::string json = Ros2Node::getInstance().getStatusJson();
+            res.set_content(json, "application/json");
+        });
+
+        // 2. ROS 2 Connect
+        auto handle_ros2_connect = [](const httplib::Request& req, httplib::Response& res) {
+            std::string ip = req.has_param("ip") ? req.get_param_value("ip") : "192.168.1.100";
+            uint16_t port = req.has_param("port") ? (uint16_t)std::atoi(req.get_param_value("port").c_str()) : 8888;
+            uint8_t domain = req.has_param("domain") ? (uint8_t)std::atoi(req.get_param_value("domain").c_str()) : 0;
+            Ros2Node::getInstance().connect(ip, port, domain);
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/ros2/connect", handle_ros2_connect);
+        svr->Get("/api/ros2/connect", handle_ros2_connect);
+
+        // 3. ROS 2 Disconnect
+        auto handle_ros2_disconnect = [](const httplib::Request& req, httplib::Response& res) {
+            Ros2Node::getInstance().disconnect();
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/ros2/disconnect", handle_ros2_disconnect);
+        svr->Get("/api/ros2/disconnect", handle_ros2_disconnect);
 
         // API for File Upload (OTA / Models / Apps)
         svr->Post("/api/upload", [](const httplib::Request& req, httplib::Response& res) {

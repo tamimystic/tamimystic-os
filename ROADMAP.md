@@ -26,10 +26,10 @@ graph TD
 
 ---
 
-## Phase 5: micro-ROS and ROS2 Native Distributed Robotics
+## Phase 5: micro-ROS and ROS2 Native Distributed Robotics [COMPLETED]
 
 ### Objective
-Integrate native **micro-ROS (Micro XRCE-DDS)** client onto ESP32-S3 to transform Tamimystic OS into a first-class ROS 2 node, enabling seamless interoperability with ROS2 Humble, Iron, and Jazzy.
+Native **micro-ROS (Micro XRCE-DDS)** client integrated onto ESP32-S3 and PC Simulator to transform Tamimystic OS into a first-class ROS 2 node, enabling seamless interoperability with ROS2 Humble, Iron, and Jazzy.
 
 ### Technical Architecture
 * **DDS Transport Layer**: Asynchronous UDP over Wi-Fi / Serial transport communicating with the `micro-ros-agent`.

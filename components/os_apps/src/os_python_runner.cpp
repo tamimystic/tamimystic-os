@@ -5,6 +5,7 @@
 #include "os_storage.h"
 #include "os_pnp_manager.h"
 #include "os_scheduler.h"
+#include "os_ros2.h"
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
@@ -149,6 +150,27 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
     if (line.rfind("tamimystic.delay(", 0) == 0 && line.back() == ')') {
         int ms = std::atoi(line.substr(17, line.length() - 18).c_str());
         OSScheduler::getInstance().delay(ms);
+        return;
+    }
+
+    // 9. tamimystic.ros2.publish_log(msg)
+    if (line.rfind("tamimystic.ros2.publish_log(", 0) == 0 && line.back() == ')') {
+        std::string log_msg = line.substr(28, line.length() - 29);
+        if (!log_msg.empty() && (log_msg.front() == '"' || log_msg.front() == '\'')) log_msg = log_msg.substr(1, log_msg.length() - 2);
+        Ros2Node::getInstance().publishLog(log_msg);
+        stdout_stream += "[ROS2:LOG] Published: " + log_msg + "\n";
+        return;
+    }
+
+    // 10. tamimystic.ros2.connect() / disconnect()
+    if (line == "tamimystic.ros2.connect()") {
+        Ros2Node::getInstance().connect();
+        stdout_stream += "[ROS2] Connecting to Agent...\n";
+        return;
+    }
+    if (line == "tamimystic.ros2.disconnect()") {
+        Ros2Node::getInstance().disconnect();
+        stdout_stream += "[ROS2] Disconnected from Agent.\n";
         return;
     }
 }
