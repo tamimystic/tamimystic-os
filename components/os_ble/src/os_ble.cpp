@@ -103,15 +103,15 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 // Telemetry Characteristic (0xFF03)
                 .uuid = &gatt_svr_chr_telemetry_uuid.u,
                 .access_cb = gatt_svr_chr_access_robotics,
-                .val_handle = &g_telemetry_handle,
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY,
+                .val_handle = &g_telemetry_handle,
             },
             {
                 // Sensor Feed Characteristic (0xFF04)
                 .uuid = &gatt_svr_chr_sensors_uuid.u,
                 .access_cb = gatt_svr_chr_access_robotics,
-                .val_handle = &g_sensors_handle,
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY,
+                .val_handle = &g_sensors_handle,
             },
             {
                 // System Command / E-STOP Characteristic (0xFF05)

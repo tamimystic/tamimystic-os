@@ -1,6 +1,7 @@
 #include "test_framework.h"
 #include <iostream>
 #include <iomanip>
+#include <cstdlib>
 
 // Declarations of individual test suites
 void run_kinematics_test_suite();
@@ -53,10 +54,10 @@ int main(int argc, char** argv) {
     if (stats.assertions_failed == 0 && stats.suites_failed == 0) {
         std::cout << "\n >>> ALL UNIT TESTS COMPLETED SUCCESSFULLY! [100% PASS] <<<\n\n";
         std::cout.flush();
-        std::exit(0);
+        std::_Exit(0);
     } else {
         std::cout << "\n >>> REGRESSION DETECTED: SOME TESTS FAILED! <<<\n\n";
         std::cout.flush();
-        std::exit(1);
+        std::_Exit(1);
     }
 }
