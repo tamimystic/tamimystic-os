@@ -7,6 +7,7 @@
 #include "os_scheduler.h"
 #include "os_ros2.h"
 #include "os_slam.h"
+#include "os_audio.h"
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
@@ -200,6 +201,45 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
     if (line == "tamimystic.slam.cancel()") {
         SlamEngine::getInstance().cancelNavigation();
         stdout_stream += "[SLAM:NAV] Navigation Aborted.\n";
+        return;
+    }
+
+    // 14. tamimystic.audio.say("phrase")
+    if (line.rfind("tamimystic.audio.say(", 0) == 0 && line.back() == ')') {
+        std::string phrase = line.substr(21, line.length() - 22);
+        if (!phrase.empty() && (phrase.front() == '"' || phrase.front() == '\'')) phrase = phrase.substr(1, phrase.length() - 2);
+        AudioEngine::getInstance().speak(phrase);
+        stdout_stream += "[AUDIO:TTS] Spoken: \"" + phrase + "\"\n";
+        return;
+    }
+
+    // 15. tamimystic.audio.tone(freq, ms)
+    if (line.rfind("tamimystic.audio.tone(", 0) == 0 && line.back() == ')') {
+        std::string args_str = line.substr(22, line.length() - 23);
+        std::stringstream ss(args_str);
+        std::string f_s, d_s;
+        if (std::getline(ss, f_s, ',') && std::getline(ss, d_s, ',')) {
+            uint16_t freq = (uint16_t)std::atoi(trim(f_s).c_str());
+            uint16_t dur = (uint16_t)std::atoi(trim(d_s).c_str());
+            AudioEngine::getInstance().playTone(freq, dur);
+            stdout_stream += "[AUDIO:DAC] Tone played: " + f_s + " Hz (" + d_s + " ms)\n";
+        }
+        return;
+    }
+
+    // 16. tamimystic.audio.beep(pattern)
+    if (line.rfind("tamimystic.audio.beep(", 0) == 0 && line.back() == ')') {
+        int pat = std::atoi(line.substr(22, line.length() - 23).c_str());
+        AudioEngine::getInstance().playBeepPattern(pat);
+        stdout_stream += "[AUDIO] Beep pattern " + std::to_string(pat) + " played.\n";
+        return;
+    }
+
+    // 17. tamimystic.audio.volume(vol)
+    if (line.rfind("tamimystic.audio.volume(", 0) == 0 && line.back() == ')') {
+        int vol = std::atoi(line.substr(24, line.length() - 25).c_str());
+        AudioEngine::getInstance().setVolume((uint8_t)vol);
+        stdout_stream += "[AUDIO] Volume set to " + std::to_string(vol) + "%\n";
         return;
     }
 }

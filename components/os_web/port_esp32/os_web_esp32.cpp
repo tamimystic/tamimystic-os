@@ -9,6 +9,7 @@
 #include "os_pin_matrix.h"
 #include "os_ros2.h"
 #include "os_slam.h"
+#include "os_audio.h"
 #include "dashboard_html.h"
 #include "esp_http_server.h"
 #include <string>
@@ -393,13 +394,117 @@ static esp_err_t slam_lidar_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+// ================= Audio Handlers =================
+static esp_err_t audio_status_handler(httpd_req_t *req) {
+    std::string json = AudioEngine::getInstance().getStatusJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t audio_waveform_handler(httpd_req_t *req) {
+    std::string json = AudioEngine::getInstance().getWaveformJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t audio_say_handler(httpd_req_t *req) {
+    char query[128];
+    char text_str[96] = {0};
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "text", text_str, sizeof(text_str));
+    }
+    if (text_str[0]) {
+        AudioEngine::getInstance().speak(text_str);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"error\",\"message\":\"Missing text\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t audio_tone_handler(httpd_req_t *req) {
+    char query[64];
+    char freq_str[16] = "440";
+    char dur_str[16] = "100";
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "freq", freq_str, sizeof(freq_str));
+        httpd_query_key_value(query, "dur", dur_str, sizeof(dur_str));
+    }
+    uint16_t freq = (uint16_t)std::atoi(freq_str);
+    uint16_t dur = (uint16_t)std::atoi(dur_str);
+    AudioEngine::getInstance().playTone(freq, dur);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t audio_beep_handler(httpd_req_t *req) {
+    char query[32];
+    char pat_str[8] = "1";
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "pattern", pat_str, sizeof(pat_str));
+    }
+    int pat = std::atoi(pat_str);
+    AudioEngine::getInstance().playBeepPattern(pat);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t audio_kws_handler(httpd_req_t *req) {
+    char query[32];
+    char en_str[8] = "1";
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "enable", en_str, sizeof(en_str));
+    }
+    bool en = (en_str[0] == '1' || en_str[0] == 't');
+    AudioEngine::getInstance().setKwsEnabled(en);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t audio_cmd_handler(httpd_req_t *req) {
+    char query[64];
+    char cmd_str[32] = {0};
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "cmd", cmd_str, sizeof(cmd_str));
+    }
+    if (cmd_str[0]) {
+        VoiceCommand c = AudioEngine::getInstance().triggerKwsTest(cmd_str);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"error\",\"message\":\"Missing cmd\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t audio_vol_handler(httpd_req_t *req) {
+    char query[32];
+    char vol_str[8] = "80";
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "vol", vol_str, sizeof(vol_str));
+    }
+    uint8_t vol = (uint8_t)std::atoi(vol_str);
+    AudioEngine::getInstance().setVolume(vol);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 void WebServer::start() {
     if (is_running) return;
     
     hal_uart_print("[WEB] Starting ESP32 HTTP Server on Port 80...\n");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 50;
+    config.max_uri_handlers = 60;
     
     if (httpd_start(&server, &config) == ESP_OK) {
         httpd_uri_t uri_dash = { .uri = "/", .method = HTTP_GET, .handler = dashboard_get_handler, .user_ctx = NULL };
@@ -437,6 +542,15 @@ void WebServer::start() {
         httpd_uri_t uri_slam_cancel = { .uri = "/api/slam/cancel", .method = HTTP_POST, .handler = slam_cancel_handler, .user_ctx = NULL };
         httpd_uri_t uri_slam_lidar = { .uri = "/api/slam/lidar", .method = HTTP_POST, .handler = slam_lidar_handler, .user_ctx = NULL };
 
+        httpd_uri_t uri_audio_status = { .uri = "/api/audio/status", .method = HTTP_GET, .handler = audio_status_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_wave = { .uri = "/api/audio/waveform", .method = HTTP_GET, .handler = audio_waveform_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_say = { .uri = "/api/audio/say", .method = HTTP_POST, .handler = audio_say_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_tone = { .uri = "/api/audio/tone", .method = HTTP_POST, .handler = audio_tone_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_beep = { .uri = "/api/audio/beep", .method = HTTP_POST, .handler = audio_beep_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_kws = { .uri = "/api/audio/kws", .method = HTTP_POST, .handler = audio_kws_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_cmd = { .uri = "/api/audio/cmd", .method = HTTP_POST, .handler = audio_cmd_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_vol = { .uri = "/api/audio/volume", .method = HTTP_POST, .handler = audio_vol_handler, .user_ctx = NULL };
+
         httpd_register_uri_handler(server, &uri_dash);
         httpd_register_uri_handler(server, &uri_pnp_dev);
         httpd_register_uri_handler(server, &uri_pnp_scan);
@@ -466,8 +580,16 @@ void WebServer::start() {
         httpd_register_uri_handler(server, &uri_slam_clear);
         httpd_register_uri_handler(server, &uri_slam_cancel);
         httpd_register_uri_handler(server, &uri_slam_lidar);
+        httpd_register_uri_handler(server, &uri_audio_status);
+        httpd_register_uri_handler(server, &uri_audio_wave);
+        httpd_register_uri_handler(server, &uri_audio_say);
+        httpd_register_uri_handler(server, &uri_audio_tone);
+        httpd_register_uri_handler(server, &uri_audio_beep);
+        httpd_register_uri_handler(server, &uri_audio_kws);
+        httpd_register_uri_handler(server, &uri_audio_cmd);
+        httpd_register_uri_handler(server, &uri_audio_vol);
 
-        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2 & File System endpoints active.\n");
+        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2, SLAM & Audio endpoints active.\n");
         is_running = true;
     } else {
         hal_uart_print("[WEB] Failed to start HTTP Server!\n");

@@ -10,6 +10,7 @@
 #include "os_apps.h"
 #include "os_ros2.h"
 #include "os_slam.h"
+#include "os_audio.h"
 
 #include <iostream>
 #include <sstream>
@@ -468,6 +469,76 @@ void CLI::init() {
             hal_uart_print(("[SLAM] LiDAR driver switched to: " + ltype + "\n").c_str());
         } else {
             hal_uart_print("Unknown slam subcommand.\n");
+        }
+    });
+
+    // Audio Edge AI & Keyword Spotting commands
+    registerCommand("audio", "Audio & Voice AI management (status, say <text>, tone <f> <ms>, beep <1-4>, kws <on|off>, cmd <word>, vol <0-100>)", [](const std::vector<std::string>& args) {
+        if (args.size() < 2) {
+            hal_uart_print("Usage: audio <status | say <text> | tone <freq> <ms> | beep <1-4> | kws <on|off> | cmd <word> | vol <0-100>>\n");
+            return;
+        }
+        std::string sub = args[1];
+        if (sub == "status") {
+            auto st = AudioEngine::getInstance().getStatus();
+            std::stringstream ss;
+            ss << "\n=== Audio Edge AI & Voice Subsystem ===\n"
+               << "  State:           " << audioStateToString(st.state) << "\n"
+               << "  KWS Active:      " << (st.is_listening ? "ENABLED (16kHz Core 1)" : "DISABLED") << "\n"
+               << "  Speaker Volume:  " << (int)st.volume << "%\n"
+               << "  Last Keyword:    \"" << st.last_command_str << "\"\n"
+               << "  Confidence:      " << (int)(st.confidence * 100) << "%\n"
+               << "  Audio Energy:    " << std::fixed << std::setprecision(1) << st.energy_level_db << " dB\n"
+               << "  Processed Frame: " << st.processed_frames << "\n"
+               << "========================================\n\n";
+            hal_uart_print(ss.str().c_str());
+        } else if (sub == "say") {
+            if (args.size() < 3) {
+                hal_uart_print("Usage: audio say <phrase to speak>\n");
+                return;
+            }
+            std::string phrase = "";
+            for (size_t i = 2; i < args.size(); i++) {
+                phrase += args[i] + (i + 1 < args.size() ? " " : "");
+            }
+            AudioEngine::getInstance().speak(phrase);
+        } else if (sub == "tone") {
+            if (args.size() < 4) {
+                hal_uart_print("Usage: audio tone <freq_hz> <duration_ms>\n");
+                return;
+            }
+            uint16_t freq = (uint16_t)std::atoi(args[2].c_str());
+            uint16_t dur = (uint16_t)std::atoi(args[3].c_str());
+            AudioEngine::getInstance().playTone(freq, dur);
+        } else if (sub == "beep") {
+            int pat = args.size() >= 3 ? std::atoi(args[2].c_str()) : 1;
+            AudioEngine::getInstance().playBeepPattern(pat);
+        } else if (sub == "kws") {
+            if (args.size() < 3) {
+                hal_uart_print("Usage: audio kws <on | off>\n");
+                return;
+            }
+            bool enable = (args[2] == "on" || args[2] == "1" || args[2] == "true");
+            AudioEngine::getInstance().setKwsEnabled(enable);
+        } else if (sub == "cmd") {
+            if (args.size() < 3) {
+                hal_uart_print("Usage: audio cmd <hey | forward | back | left | right | stop | arm | grab | status>\n");
+                return;
+            }
+            VoiceCommand c = AudioEngine::getInstance().triggerKwsTest(args[2]);
+            if (c == VoiceCommand::NONE) {
+                hal_uart_print("Unknown voice command name.\n");
+            }
+        } else if (sub == "vol") {
+            if (args.size() < 3) {
+                hal_uart_print("Usage: audio vol <0-100>\n");
+                return;
+            }
+            uint8_t vol = (uint8_t)std::atoi(args[2].c_str());
+            AudioEngine::getInstance().setVolume(vol);
+            hal_uart_print(("[AUDIO] Volume set to " + std::to_string(vol) + "%\n").c_str());
+        } else {
+            hal_uart_print("Unknown audio subcommand.\n");
         }
     });
 

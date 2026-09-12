@@ -31,7 +31,11 @@ void PinMatrixManager::init() {
         {"ultrasonic_trig", PinFunction::ULTRASONIC_TRIG},
         {"ultrasonic_echo", PinFunction::ULTRASONIC_ECHO},
         {"status_led", PinFunction::STATUS_LED},
-        {"buzzer", PinFunction::BUZZER}
+        {"buzzer", PinFunction::BUZZER},
+        {"i2s_bclk", PinFunction::I2S_BCLK},
+        {"i2s_ws", PinFunction::I2S_WS},
+        {"i2s_din", PinFunction::I2S_DIN},
+        {"i2s_dout", PinFunction::I2S_DOUT}
     };
 
     resetToDefaults();
@@ -59,6 +63,10 @@ void PinMatrixManager::resetToDefaults() {
     pin_map[PinFunction::ULTRASONIC_ECHO] = 14;
     pin_map[PinFunction::STATUS_LED] = 48;
     pin_map[PinFunction::BUZZER] = 17;
+    pin_map[PinFunction::I2S_BCLK] = 41;
+    pin_map[PinFunction::I2S_WS] = 42;
+    pin_map[PinFunction::I2S_DIN] = 40;
+    pin_map[PinFunction::I2S_DOUT] = 39;
 }
 
 void PinMatrixManager::loadFromNVS() {

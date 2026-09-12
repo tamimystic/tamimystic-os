@@ -81,6 +81,7 @@ nav:
     - DVP Camera & PSRAM Streaming: ai-vision/camera.md
     - Onboard Neural Models: ai-vision/neural-models.md
     - Autonomous Visual Tracking: ai-vision/visual-tracking.md
+    - Voice Control & Audio Edge AI: ai-vision/voice-audio.md
   - Python & Application Engine:
     - MicroPython Runtime & APIs: apps/micropython.md
     - In-Browser Web IDE & VFS: apps/web-ide.md

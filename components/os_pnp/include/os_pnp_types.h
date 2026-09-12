@@ -77,7 +77,11 @@ enum class PinFunction {
     ULTRASONIC_TRIG,
     ULTRASONIC_ECHO,
     STATUS_LED,
-    BUZZER
+    BUZZER,
+    I2S_BCLK,
+    I2S_WS,
+    I2S_DIN,
+    I2S_DOUT
 };
 
 inline const char* pinFunctionToString(PinFunction func) {
@@ -99,6 +103,10 @@ inline const char* pinFunctionToString(PinFunction func) {
         case PinFunction::ULTRASONIC_ECHO:  return "Ultrasonic Echo";
         case PinFunction::STATUS_LED:       return "Status LED";
         case PinFunction::BUZZER:           return "Buzzer";
+        case PinFunction::I2S_BCLK:         return "I2S Bit Clock (BCLK)";
+        case PinFunction::I2S_WS:           return "I2S Word Select (WS)";
+        case PinFunction::I2S_DIN:          return "I2S Mic Data (DIN)";
+        case PinFunction::I2S_DOUT:         return "I2S Speaker Data (DOUT)";
         default:                            return "Unassigned";
     }
 }

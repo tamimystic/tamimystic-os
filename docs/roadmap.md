@@ -52,16 +52,16 @@ graph TD
 
 ---
 
-## Phase 7: Audio Edge AI, Voice Control and Speech Synthesis
+## Phase 7: Audio Edge AI, Voice Control and Speech Synthesis [COMPLETED]
 
 * **Hardware Interface**:
-  - **Audio Input**: I2S DMA driver for digital MEMS microphone (INMP441 / SPH0645).
+  - **Audio Input**: I2S DMA driver for digital MEMS microphone (INMP441 / SPH0645) @ 16kHz 16-bit mono.
   - **Audio Output**: I2S DAC amplifier (MAX98357A / PCM5102) connected to a 3W speaker.
 * **Neural Wake-Word and Keyword Spotting (KWS)**:
   - Quantized TensorFlow Lite Micro audio classification model running on **Core 1**.
-  - Recognized Voice Commands: *"Hey Tamimystic"*, *"Drive Forward"*, *"Stop"*, *"Turn Left"*, *"Grab Object"*.
+  - Recognized Voice Commands: *"Hey Tamimystic"*, *"Drive Forward"*, *"Stop"*, *"Turn Left"*, *"Grab Object"*, *"Status Report"*.
 * **Speech Feedback and Sound Effects**:
-  - Embedded PCM audio synthesizer for voice confirmations, obstacle beeps, and audio alerts.
+  - Embedded Formant & PCM audio synthesizer for voice confirmations, obstacle beeps, and audio alerts.
 
 ---
 

@@ -401,7 +401,68 @@ print("Finished.")</textarea>
         </div>
     </div>
 
-    <!-- Card 9: Live Event Logs (Full Width) -->
+    <!-- Card 9: Audio Edge AI, Voice Control & Speech Synthesis -->
+    <div class="card">
+        <div class="card-header">
+            <h2>🎙️ Audio Edge AI & Voice Synthesis</h2>
+            <span class="brand-chip" id="audio-state-pill" style="color:var(--success); border-color:var(--success);">KWS LISTENING</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <!-- Waveform & Mic Visualizer -->
+            <div style="position:relative; width:100%; height:90px; background:#080c14; border-radius:10px; border:1px solid var(--border); overflow:hidden; display:flex; justify-content:center; align-items:center;">
+                <canvas id="audio-visualizer-canvas" width="400" height="90" style="width:100%; height:100%;"></canvas>
+                <div id="audio-energy-badge" style="position:absolute; top:6px; left:8px; font-size:10px; color:var(--success); font-family:monospace; background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:4px;">Mic: -42.0 dB</div>
+                <div id="audio-kws-badge" style="position:absolute; top:6px; right:8px; font-size:10px; color:var(--primary); font-family:monospace; background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:4px;">16kHz I2S DMA</div>
+            </div>
+
+            <!-- Voice Trigger Buttons -->
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:11px; color:var(--text-muted);">Simulate Voice Keyword Trigger:</span>
+                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+                    <button class="btn-action voice-trigger-btn" data-cmd="hey" style="background:rgba(56, 189, 248, 0.15); color:var(--primary); justify-content:center;">"Hey Tamimystic"</button>
+                    <button class="btn-action voice-trigger-btn" data-cmd="forward" style="background:#334155; color:#fff; justify-content:center;">"Forward"</button>
+                    <button class="btn-action voice-trigger-btn" data-cmd="back" style="background:#334155; color:#fff; justify-content:center;">"Reverse"</button>
+                    <button class="btn-action voice-trigger-btn" data-cmd="stop" style="background:rgba(248, 113, 113, 0.2); color:var(--danger); justify-content:center;">"Stop!"</button>
+                    <button class="btn-action voice-trigger-btn" data-cmd="left" style="background:#334155; color:#fff; justify-content:center;">"Turn Left"</button>
+                    <button class="btn-action voice-trigger-btn" data-cmd="right" style="background:#334155; color:#fff; justify-content:center;">"Turn Right"</button>
+                    <button class="btn-action voice-trigger-btn" data-cmd="arm" style="background:#334155; color:#fff; justify-content:center;">"Arm Home"</button>
+                    <button class="btn-action voice-trigger-btn" data-cmd="grab" style="background:#334155; color:#fff; justify-content:center;">"Grab Object"</button>
+                </div>
+            </div>
+
+            <!-- Text to Speech & Sound Generator -->
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="tts-input" class="ik-input" placeholder="Enter phrase to synthesize speech..." value="Tamimystic OS online. Ready for mission." style="flex:3;">
+                <button class="btn-action" id="btn-tts-speak" style="flex:1; background:var(--primary); color:#082f49; justify-content:center;">🔊 Speak</button>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-action" onclick="fetch('/api/audio/beep?pattern=1', {method:'POST'})" style="background:#334155; color:#fff; font-size:11px;">Chime 1</button>
+                    <button class="btn-action" onclick="fetch('/api/audio/beep?pattern=2', {method:'POST'})" style="background:#334155; color:#fff; font-size:11px;">Warning</button>
+                    <button class="btn-action" onclick="fetch('/api/audio/beep?pattern=3', {method:'POST'})" style="background:#334155; color:#fff; font-size:11px;">Chirp</button>
+                    <button class="btn-action" onclick="fetch('/api/audio/beep?pattern=4', {method:'POST'})" style="background:rgba(248, 113, 113, 0.2); color:var(--danger); font-size:11px;">Alarm</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted);">
+                    <span>Vol:</span>
+                    <input type="range" id="audio-vol-slider" min="0" max="100" value="80" style="width:70px;" onchange="fetch('/api/audio/volume?vol='+this.value, {method:'POST'})">
+                </div>
+            </div>
+
+            <div class="hud-panel">
+                <div class="hud-row">
+                    <span>Last Voice Command</span>
+                    <span class="hud-val" id="audio-last-cmd" style="color:var(--primary);">"None"</span>
+                </div>
+                <div class="hud-row">
+                    <span>Neural KWS Confidence</span>
+                    <span class="hud-val" id="audio-confidence-val">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 10: Live Event Logs (Full Width) -->
     <div class="card" style="grid-column: 1 / -1;">
         <div class="card-header">
             <h2>📜 Real-Time System Event Logs</h2>
@@ -1032,15 +1093,98 @@ print("Pick complete!")`;
         fetch(`/api/slam/lidar?type=${type}`, { method: 'POST' });
     });
 
+    // 14. Audio Edge AI & Voice Synthesizer
+    const audioCanvas = document.getElementById('audio-visualizer-canvas');
+    const aCtx = audioCanvas.getContext('2d');
+
+    function renderAudioWaveform(waveform, energy_db, is_speaking) {
+        if (!waveform) return;
+        const w = audioCanvas.width;
+        const h = audioCanvas.height;
+        aCtx.fillStyle = '#080c14';
+        aCtx.fillRect(0, 0, w, h);
+
+        const barCount = waveform.length;
+        const barWidth = (w / barCount) - 2;
+
+        for (let i = 0; i < barCount; i++) {
+            const val = waveform[i];
+            const barHeight = Math.max(4, val * h * 0.85);
+            const x = i * (barWidth + 2) + 1;
+            const y = (h - barHeight) / 2;
+
+            if (is_speaking) {
+                aCtx.fillStyle = '#38bdf8';
+            } else if (energy_db > -35) {
+                aCtx.fillStyle = '#34d399';
+            } else {
+                aCtx.fillStyle = '#334155';
+            }
+            aCtx.fillRect(x, y, barWidth, barHeight);
+        }
+    }
+
+    function fetchAudioData() {
+        fetch('/api/audio/waveform')
+            .then(res => res.json())
+            .then(data => {
+                renderAudioWaveform(data.waveform, data.energy_db, data.state === 'SPEAKING');
+                document.getElementById('audio-energy-badge').innerText = `Mic: ${data.energy_db.toFixed(1)} dB`;
+                const pill = document.getElementById('audio-state-pill');
+                if (data.state === 'SPEAKING') {
+                    pill.innerText = "SPEAKING (TTS)";
+                    pill.style.color = "var(--primary)";
+                    pill.style.borderColor = "var(--primary)";
+                } else if (data.state === 'LISTENING') {
+                    pill.innerText = "KWS LISTENING";
+                    pill.style.color = "var(--success)";
+                    pill.style.borderColor = "var(--success)";
+                } else {
+                    pill.innerText = "IDLE";
+                    pill.style.color = "var(--text-muted)";
+                    pill.style.borderColor = "var(--border)";
+                }
+            })
+            .catch(() => {});
+
+        fetch('/api/audio/status')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('audio-last-cmd').innerText = `"${data.last_command}"`;
+                document.getElementById('audio-confidence-val').innerText = `${Math.round(data.confidence * 100)}%`;
+            })
+            .catch(() => {});
+    }
+
+    document.querySelectorAll('.voice-trigger-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cmd = btn.getAttribute('data-cmd');
+            log(`[AUDIO:VOICE] Triggered command: "${cmd}"`);
+            fetch(`/api/audio/cmd?cmd=${cmd}`, { method: 'POST' })
+                .then(() => setTimeout(fetchAudioData, 300));
+        });
+    });
+
+    document.getElementById('btn-tts-speak').addEventListener('click', () => {
+        const text = document.getElementById('tts-input').value;
+        if (text) {
+            log(`[AUDIO:TTS] Speaking phrase: "${text}"`);
+            fetch(`/api/audio/say?text=${encodeURIComponent(text)}`, { method: 'POST' })
+                .then(() => setTimeout(fetchAudioData, 200));
+        }
+    });
+
     fetchPnPDevices();
     fetchPinMatrix();
     fetchFiles();
     fetchRos2Status();
     fetchSlamData();
+    fetchAudioData();
     setInterval(fetchPnPDevices, 4000);
     setInterval(fetchTelemetry, 1000);
     setInterval(fetchRos2Status, 2000);
     setInterval(fetchSlamData, 1500);
+    setInterval(fetchAudioData, 500);
 </script>
 
 </body>

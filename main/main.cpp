@@ -16,6 +16,7 @@
 #include "os_ai.h"
 #include "os_ros2.h"
 #include "os_slam.h"
+#include "os_audio.h"
 
 using namespace TamimysticOS;
 
@@ -57,6 +58,9 @@ void os_core_start() {
 
     // 10. Initialize 2D LiDAR & Occupancy Grid SLAM Navigation Engine
     SlamEngine::getInstance().init();
+
+    // 11. Initialize Audio Edge AI, I2S Drivers & Keyword Spotting
+    AudioEngine::getInstance().init();
 
     // Background Task for System Heartbeat
     OSScheduler::getInstance().createTask("sys_heartbeat", 2048, 1, CORE_0, []() {

@@ -9,6 +9,7 @@
 #include "os_pin_matrix.h"
 #include "os_ros2.h"
 #include "os_slam.h"
+#include "os_audio.h"
 #include <thread>
 #include <atomic>
 #include "httplib.h"
@@ -358,6 +359,85 @@ void WebServer::start() {
         };
         svr->Post("/api/slam/lidar", handle_slam_lidar);
         svr->Get("/api/slam/lidar", handle_slam_lidar);
+
+        // ================= Audio Edge AI & Voice Synthesis API =================
+        // 1. Audio Status
+        svr->Get("/api/audio/status", [](const httplib::Request& req, httplib::Response& res) {
+            std::string json = AudioEngine::getInstance().getStatusJson();
+            res.set_content(json, "application/json");
+        });
+
+        // 2. Audio Waveform & Energy
+        svr->Get("/api/audio/waveform", [](const httplib::Request& req, httplib::Response& res) {
+            std::string json = AudioEngine::getInstance().getWaveformJson();
+            res.set_content(json, "application/json");
+        });
+
+        // 3. Audio Speak / TTS
+        auto handle_audio_say = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("text")) {
+                std::string phrase = req.get_param_value("text");
+                AudioEngine::getInstance().speak(phrase);
+                res.set_content("{\"status\":\"ok\",\"spoken\":\"" + phrase + "\"}", "application/json");
+            } else {
+                res.set_content("{\"status\":\"error\",\"message\":\"Missing text parameter\"}", "application/json");
+            }
+        };
+        svr->Post("/api/audio/say", handle_audio_say);
+        svr->Get("/api/audio/say", handle_audio_say);
+
+        // 4. Audio Tone / Beep
+        auto handle_audio_tone = [](const httplib::Request& req, httplib::Response& res) {
+            uint16_t freq = req.has_param("freq") ? (uint16_t)std::atoi(req.get_param_value("freq").c_str()) : 440;
+            uint16_t dur = req.has_param("dur") ? (uint16_t)std::atoi(req.get_param_value("dur").c_str()) : 100;
+            AudioEngine::getInstance().playTone(freq, dur);
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/audio/tone", handle_audio_tone);
+        svr->Get("/api/audio/tone", handle_audio_tone);
+
+        auto handle_audio_beep = [](const httplib::Request& req, httplib::Response& res) {
+            int pat = req.has_param("pattern") ? std::atoi(req.get_param_value("pattern").c_str()) : 1;
+            AudioEngine::getInstance().playBeepPattern(pat);
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/audio/beep", handle_audio_beep);
+        svr->Get("/api/audio/beep", handle_audio_beep);
+
+        // 5. Audio KWS Control & Voice Command Trigger
+        auto handle_audio_kws = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("enable")) {
+                std::string val = req.get_param_value("enable");
+                bool en = (val == "1" || val == "true" || val == "on");
+                AudioEngine::getInstance().setKwsEnabled(en);
+            }
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/audio/kws", handle_audio_kws);
+        svr->Get("/api/audio/kws", handle_audio_kws);
+
+        auto handle_audio_cmd = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("cmd")) {
+                std::string cmd_name = req.get_param_value("cmd");
+                VoiceCommand c = AudioEngine::getInstance().triggerKwsTest(cmd_name);
+                res.set_content("{\"status\":\"ok\",\"command\":\"" + std::string(voiceCommandToString(c)) + "\"}", "application/json");
+            } else {
+                res.set_content("{\"status\":\"error\",\"message\":\"Missing cmd parameter\"}", "application/json");
+            }
+        };
+        svr->Post("/api/audio/cmd", handle_audio_cmd);
+        svr->Get("/api/audio/cmd", handle_audio_cmd);
+
+        // 6. Audio Volume
+        auto handle_audio_vol = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("vol")) {
+                uint8_t vol = (uint8_t)std::atoi(req.get_param_value("vol").c_str());
+                AudioEngine::getInstance().setVolume(vol);
+            }
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/audio/volume", handle_audio_vol);
+        svr->Get("/api/audio/volume", handle_audio_vol);
 
         // API for File Upload (OTA / Models / Apps)
         svr->Post("/api/upload", [](const httplib::Request& req, httplib::Response& res) {
