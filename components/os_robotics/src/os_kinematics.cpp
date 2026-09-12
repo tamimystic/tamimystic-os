@@ -105,7 +105,7 @@ bool KinematicsEngine::solveInverseKinematics(const ArmPose& target, ArmJoints& 
     float shoulder_pitch_deg = rad2deg(alpha + beta);
 
     // 5. Wrist Pitch Angle
-    float wrist_pitch_deg = 90.0f + (target.pitch - (shoulder_pitch_deg + elbow_pitch_deg - 180.0f));
+    float wrist_pitch_deg = 90.0f + (target.pitch - (shoulder_pitch_deg - elbow_pitch_deg));
 
     // Clamp and assign joint values (0 - 180 deg servo range)
     out_joints.base_yaw = std::clamp(base_yaw_deg, 0.0f, 180.0f);
@@ -127,7 +127,7 @@ ArmPose KinematicsEngine::solveForwardKinematics(const ArmJoints& joints) {
 
     // Relative joint angles in 2D plane
     float theta1 = shoulder_rad;
-    float theta2 = theta1 + elbow_rad - (float)M_PI;
+    float theta2 = theta1 - elbow_rad;
     float theta3 = theta2 + wrist_rad;
 
     float r = L1_upper * std::cos(theta1) + L2_fore * std::cos(theta2) + L3_wrist * std::cos(theta3);

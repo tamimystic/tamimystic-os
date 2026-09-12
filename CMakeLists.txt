@@ -12,12 +12,17 @@ else()
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_C_STANDARD 11)
 
-    # Force static linking so we don't need libstdc++-6.dll
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
-
     # Define a custom preprocessor flag to indicate native build
     add_compile_definitions(OS_TARGET_NATIVE)
-    add_compile_definitions(_WIN32_WINNT=0x0A00)
+
+    if(WIN32)
+        # Force static linking so we don't need libstdc++-6.dll
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+        add_compile_definitions(_WIN32_WINNT=0x0A00)
+    else()
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+        add_compile_options(-pthread)
+    endif()
 
     # Manually collect components for native build
     add_subdirectory(components/os_hal)
@@ -38,4 +43,8 @@ else()
     add_subdirectory(components/os_espnow)
     add_subdirectory(components/os_ble)
     add_subdirectory(main)
+    
+    # Automated Unit Test Suite
+    enable_testing()
+    add_subdirectory(tests)
 endif()

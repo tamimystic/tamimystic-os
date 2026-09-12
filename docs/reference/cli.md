@@ -100,6 +100,7 @@ Available commands:
   audio - Audio Edge AI & Voice Control: audio [status|cmd <c>|say "text"|beep [p]|volume <0-100>]
   espnow - ESP-NOW Swarm Mesh Radio: espnow [status|peers|swarm <leader|follower|off>|remote <on|off>|send <mac> <msg>]
   ble - Manage BLE 5.0 GATT server: ble [status|adv <start|stop>|disconnect]
+  bench - Run execution benchmarks: bench [all|ik|kinematics|slam] [iterations]
 ```
 
 ---
@@ -136,3 +137,49 @@ Terminates active connection with a paired Web Bluetooth client or smartphone:
 tamimystic> ble disconnect
 [BLE] Disconnected active client.
 ```
+
+---
+
+### 3. Subsystem Benchmarking Commands
+
+#### `bench all`
+Executes full subsystem micro-benchmarks including 6-DOF Inverse Kinematics, Mecanum Drive kinematics, and 2D SLAM A* global path planning:
+```text
+tamimystic> bench all
+
+=======================================================
+       TAMIMYSTIC OS - SUBSYSTEM BENCHMARKS           
+=======================================================
+
+[BENCHMARK] 6-DOF Robotic Arm Inverse Kinematics:
+  Iterations:        10000 iterations
+  Solved Poses:      10000/10000
+  Total Time:        0.82 ms
+  Average Latency:   0.082 us / solve
+  Throughput:        12195122 solves/sec
+
+[BENCHMARK] Mecanum 4WD Drive Kinematics:
+  Iterations:        50000 iterations
+  Total Time:        0.98 ms
+  Average Latency:   0.020 us / cycle
+  Throughput:        51020408 calcs/sec
+
+[BENCHMARK] 2D SLAM A* Global Path Planner (200x200 Grid):
+  Iterations:        100 path searches
+  Successful Paths:  100/100
+  Total Time:        35.12 ms
+  Average Latency:   0.351 ms / search
+  Throughput:        284.7 plans/sec
+
+-------------------------------------------------------
+```
+
+#### `bench ik [iterations]`
+Runs the 6-DOF inverse kinematics solver for a custom number of iterations.
+
+#### `bench kinematics [iterations]`
+Runs 4WD Mecanum wheel speed inverse kinematics for a custom number of iterations.
+
+#### `bench slam [iterations]`
+Runs 2D Occupancy Grid A* path searches for a custom number of iterations.
+

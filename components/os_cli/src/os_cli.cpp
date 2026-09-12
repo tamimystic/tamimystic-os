@@ -17,6 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <chrono>
 
 #ifdef OS_TARGET_NATIVE
 #include <thread>
@@ -628,6 +629,108 @@ void CLI::init() {
         } else {
             hal_uart_print("Unknown ble subcommand. Usage: ble [status|adv <start|stop>|disconnect]\n");
         }
+    });
+
+    // Subsystem Performance Benchmarking suite
+    registerCommand("bench", "Run execution benchmarks (bench [all|ik|kinematics|slam] [iterations])", [](const std::vector<std::string>& args) {
+        std::string target = (args.size() >= 2) ? args[1] : "all";
+        int iters = (args.size() >= 3) ? std::atoi(args[2].c_str()) : 0;
+
+        hal_uart_print("\n=======================================================\n");
+        hal_uart_print("       TAMIMYSTIC OS - SUBSYSTEM BENCHMARKS           \n");
+        hal_uart_print("=======================================================\n\n");
+
+        if (target == "all" || target == "ik") {
+            int ik_iters = (iters > 0) ? iters : 10000;
+            auto& ke = KinematicsEngine::getInstance();
+            ArmPose pose{16.0f, 4.0f, 12.0f, 0.0f, 50.0f};
+            ArmJoints joints;
+
+            auto t0 = std::chrono::high_resolution_clock::now();
+            int success_count = 0;
+            for (int i = 0; i < ik_iters; i++) {
+                pose.x = 12.0f + (float)(i % 10);
+                pose.y = -5.0f + (float)(i % 10);
+                if (ke.solveInverseKinematics(pose, joints)) {
+                    success_count++;
+                }
+            }
+            auto t1 = std::chrono::high_resolution_clock::now();
+            double elapsed_us = std::chrono::duration<double, std::micro>(t1 - t0).count();
+            double avg_us = elapsed_us / (double)ik_iters;
+            double ops_per_sec = ((double)ik_iters / elapsed_us) * 1e6;
+
+            std::ostringstream ss;
+            ss << "[BENCHMARK] 6-DOF Robotic Arm Inverse Kinematics:\n"
+               << "  Iterations:        " << ik_iters << " iterations\n"
+               << "  Solved Poses:      " << success_count << "/" << ik_iters << "\n"
+               << "  Total Time:        " << std::fixed << std::setprecision(2) << (elapsed_us / 1000.0) << " ms\n"
+               << "  Average Latency:   " << std::fixed << std::setprecision(3) << avg_us << " us / solve\n"
+               << "  Throughput:        " << std::fixed << std::setprecision(0) << ops_per_sec << " solves/sec\n\n";
+            hal_uart_print(ss.str().c_str());
+        }
+
+        if (target == "all" || target == "kinematics") {
+            int kin_iters = (iters > 0) ? iters : 50000;
+            auto& ke = KinematicsEngine::getInstance();
+
+            auto t0 = std::chrono::high_resolution_clock::now();
+            volatile float dummy = 0.0f;
+            for (int i = 0; i < kin_iters; i++) {
+                float vx = 20.0f + (float)(i % 50);
+                float vy = -10.0f + (float)(i % 20);
+                float w = 15.0f + (float)(i % 30);
+                WheelSpeeds ws = ke.computeMecanum(vx, vy, w);
+                dummy += ws.front_left + ws.front_right + ws.rear_left + ws.rear_right;
+            }
+            auto t1 = std::chrono::high_resolution_clock::now();
+            double elapsed_us = std::chrono::duration<double, std::micro>(t1 - t0).count();
+            double avg_us = elapsed_us / (double)kin_iters;
+            double ops_per_sec = ((double)kin_iters / elapsed_us) * 1e6;
+
+            std::ostringstream ss;
+            ss << "[BENCHMARK] Mecanum 4WD Drive Kinematics:\n"
+               << "  Iterations:        " << kin_iters << " iterations\n"
+               << "  Total Time:        " << std::fixed << std::setprecision(2) << (elapsed_us / 1000.0) << " ms\n"
+               << "  Average Latency:   " << std::fixed << std::setprecision(3) << avg_us << " us / cycle\n"
+               << "  Throughput:        " << std::fixed << std::setprecision(0) << ops_per_sec << " calcs/sec\n\n";
+            hal_uart_print(ss.str().c_str());
+        }
+
+        if (target == "all" || target == "slam") {
+            int slam_iters = (iters > 0) ? iters : 100;
+            auto& slam = SlamEngine::getInstance();
+            slam.init();
+            slam.clearMap();
+
+            // Insert simulated obstacles
+            for (int x = 20; x <= 40; x++) slam.setCell(x, 25, 100);
+
+            GridCoord start{10, 10};
+            GridCoord goal{50, 40};
+
+            auto t0 = std::chrono::high_resolution_clock::now();
+            int paths_found = 0;
+            for (int i = 0; i < slam_iters; i++) {
+                auto path = slam.planAStar(start, goal);
+                if (!path.empty()) paths_found++;
+            }
+            auto t1 = std::chrono::high_resolution_clock::now();
+            double elapsed_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+            double avg_ms = elapsed_ms / (double)slam_iters;
+            double plans_per_sec = ((double)slam_iters / (elapsed_ms / 1000.0));
+
+            std::ostringstream ss;
+            ss << "[BENCHMARK] 2D SLAM A* Global Path Planner (200x200 Grid):\n"
+               << "  Iterations:        " << slam_iters << " path searches\n"
+               << "  Successful Paths:  " << paths_found << "/" << slam_iters << "\n"
+               << "  Total Time:        " << std::fixed << std::setprecision(2) << elapsed_ms << " ms\n"
+               << "  Average Latency:   " << std::fixed << std::setprecision(3) << avg_ms << " ms / search\n"
+               << "  Throughput:        " << std::fixed << std::setprecision(1) << plans_per_sec << " plans/sec\n\n";
+            hal_uart_print(ss.str().c_str());
+        }
+
+        hal_uart_print("-------------------------------------------------------\n\n");
     });
 
 #ifdef OS_TARGET_NATIVE

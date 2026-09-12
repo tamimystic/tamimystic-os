@@ -299,8 +299,9 @@ std::vector<GridCoord> SlamEngine::planAStar(const GridCoord& start, const GridC
 
     if (found) {
         GridCoord curr = goal;
-        while (curr != start && curr.x != -1) {
+        while (curr.x != -1) {
             path.push_back(curr);
+            if (curr == start) break;
             curr = parent_map[get_idx(curr.x, curr.y)];
         }
         std::reverse(path.begin(), path.end());

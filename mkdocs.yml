@@ -94,4 +94,5 @@ nav:
   - Developer Guide:
     - Build from Source (PC & ESP32): development/build.md
     - CI/CD & GitHub Actions: development/cicd.md
+    - Automated Testing & Benchmarks: development/benchmarks-testing.md
   - Future Roadmap: roadmap.md

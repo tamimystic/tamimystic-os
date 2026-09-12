@@ -7,10 +7,25 @@ on:
     branches: [ "main" ]
 
 jobs:
+  test-native-sim:
+    name: Build & Run Automated CTest Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake Native Simulation
+        run: cmake -B build -S .
+
+      - name: Compile Native Simulation & Test Suite
+        run: cmake --build build --config Release
+
+      - name: Run Automated CTest Unit Tests & Kinematics Benchmarks
+        run: ctest --test-dir build --output-on-failure --verbose
+
   build-esp32:
     name: Build ESP32-S3 Firmware
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -20,7 +35,6 @@ jobs:
         with:
           esp_idf_version: v5.2
           target: esp32s3
-          
 
       - name: Archive Firmware (BIN Files)
         uses: actions/upload-artifact@v4
