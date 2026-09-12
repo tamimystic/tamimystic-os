@@ -45,6 +45,8 @@ target_link_libraries(tamimystic_tests PRIVATE
 
 if(WIN32)
     target_link_libraries(tamimystic_tests PRIVATE ws2_32)
+else()
+    target_link_libraries(tamimystic_tests PRIVATE pthread)
 endif()
 
 enable_testing()

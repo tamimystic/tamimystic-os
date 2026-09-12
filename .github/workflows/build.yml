@@ -26,16 +26,19 @@ jobs:
   build-esp32:
     name: Build ESP32-S3 Firmware
     runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.2.1
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         
       - name: Build ESP32-S3 Firmware via ESP-IDF v5.2
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v5.2.1
-          target: esp32s3
-          command: idf.py build
+        shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          git config --global --add safe.directory "*"
+          idf.py set-target esp32s3
+          idf.py build
 
       - name: Archive Firmware (BIN & ELF Binaries)
         uses: actions/upload-artifact@v4
