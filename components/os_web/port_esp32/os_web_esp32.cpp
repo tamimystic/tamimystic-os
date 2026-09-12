@@ -15,6 +15,8 @@
 #include "dashboard_html.h"
 #include "esp_http_server.h"
 #include <string>
+#include <cstdlib>
+#include <cstring>
 
 namespace TamimysticOS {
 

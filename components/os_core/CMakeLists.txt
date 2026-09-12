@@ -1,7 +1,7 @@
 if(DEFINED ENV{IDF_PATH})
     idf_component_register(SRCS "src/os_event_bus.cpp"
                            INCLUDE_DIRS "include"
-                           PRIV_REQUIRES os_hal)
+                           PRIV_REQUIRES os_hal freertos)
 else()
     add_library(os_core STATIC "src/os_event_bus.cpp")
     target_include_directories(os_core PUBLIC "include")

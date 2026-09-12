@@ -1,4 +1,6 @@
 #include "os_hal_i2c.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/i2c.h"
 
 #define I2C_MASTER_PORT I2C_NUM_0
