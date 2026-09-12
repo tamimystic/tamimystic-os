@@ -163,14 +163,14 @@ const char* dashboard_html = R"=====(
     <!-- Card 1: Universal Robotics & Teleoperation -->
     <div class="card">
         <div class="card-header">
-            <h2>🦾 Universal Robotics Teleop</h2>
+            <h2>Universal Robotics Teleop</h2>
             <div id="obstacle-radar" style="font-size:12px; font-weight:bold; color:var(--success);">Radar: Clear</div>
         </div>
 
         <div class="mode-tabs">
-            <button class="mode-tab active" data-mode="0">🏎️ Rover (2WD/4WD)</button>
-            <button class="mode-tab" data-mode="1">🔄 Mecanum 4WD</button>
-            <button class="mode-tab" data-mode="2">🦾 Robotic Arm</button>
+            <button class="mode-tab active" data-mode="0">️ Rover (2WD/4WD)</button>
+            <button class="mode-tab" data-mode="1"> Mecanum 4WD</button>
+            <button class="mode-tab" data-mode="2"> Robotic Arm</button>
         </div>
 
         <!-- Panel A: Rover / Mecanum 360 Joystick -->
@@ -201,7 +201,7 @@ const char* dashboard_html = R"=====(
             </div>
             <!-- Inverse Kinematics Box -->
             <div class="ik-box">
-                <div style="font-weight:700; font-size:12px; color:var(--primary);">🎯 Inverse Kinematics (IK) Cartesian Solver</div>
+                <div style="font-weight:700; font-size:12px; color:var(--primary);"> Inverse Kinematics (IK) Cartesian Solver</div>
                 <div class="ik-inputs">
                     <div class="ik-field"><span>Target X (cm)</span><input type="number" id="ik-x" class="ik-input" value="15.0" step="0.5"></div>
                     <div class="ik-field"><span>Target Y (cm)</span><input type="number" id="ik-y" class="ik-input" value="0.0" step="0.5"></div>
@@ -212,13 +212,13 @@ const char* dashboard_html = R"=====(
             </div>
         </div>
 
-        <button class="btn-stop" id="btn-emergency-stop">🛑 EMERGENCY BRAKE</button>
+        <button class="btn-stop" id="btn-emergency-stop"> EMERGENCY BRAKE</button>
     </div>
 
     <!-- Card 2: In-Browser Python IDE & App Runner -->
     <div class="card">
         <div class="card-header">
-            <h2>🐍 Web Python IDE & Script Runner</h2>
+            <h2>Web Python IDE & Script Runner</h2>
             <div style="font-size:11px; font-family:monospace; color:var(--success);">MicroPython Engine</div>
         </div>
         <textarea class="code-editor" id="py-code" spellcheck="false"># Tamimystic OS Embedded Python
@@ -240,7 +240,7 @@ print("Finished.")</textarea>
         <div class="ide-controls">
             <button class="btn-action" id="btn-run-code" style="background:var(--success); color:#022c22;">▶️ Run Script</button>
             <button class="btn-action" id="btn-stop-code" style="background:var(--danger); color:#fff;">⏹️ Stop</button>
-            <button class="btn-action" id="btn-load-arm-demo" style="background:#334155; color:#fff;">🦾 Load Arm Demo</button>
+            <button class="btn-action" id="btn-load-arm-demo" style="background:#334155; color:#fff;"> Load Arm Demo</button>
         </div>
         <div class="ide-output" id="py-output">Stdout console output ready.</div>
     </div>
@@ -248,13 +248,13 @@ print("Finished.")</textarea>
     <!-- Card 3: Edge AI & Live Camera Vision Pipeline -->
     <div class="card">
         <div class="card-header">
-            <h2>🧠 Edge AI & Live Camera</h2>
+            <h2>Edge AI & Live Camera</h2>
             <div style="font-size:11px; font-family:monospace; color:var(--primary);">TFLite Micro (ESP-NN)</div>
         </div>
         <div class="camera-wrapper">
             <img id="camera-frame" src="/api/camera/snapshot" alt="Live Camera Video">
             <canvas id="ai-overlay" width="320" height="240"></canvas>
-            <div class="ai-chip" id="ai-target-badge">🎯 Locked: Searching...</div>
+            <div class="ai-chip" id="ai-target-badge"> Locked: Searching...</div>
             <div class="ai-fps-chip" id="ai-fps-badge">22.5 FPS | 18ms</div>
         </div>
         <div class="ai-ctrl-bar">
@@ -264,15 +264,15 @@ print("Finished.")</textarea>
                 <option value="lane">Autonomous Lane & Line Follower</option>
                 <option value="gesture">Hand Gesture Neural Classifier</option>
             </select>
-            <button class="btn-track" id="btn-toggle-track">🎯 Auto-Follow: OFF</button>
+            <button class="btn-track" id="btn-toggle-track"> Auto-Follow: OFF</button>
         </div>
     </div>
 
     <!-- Card 4: Flash File Manager (6.8MB LittleFS) & Dual-Bank OTA -->
     <div class="card">
         <div class="card-header">
-            <h2>📁 6.8MB Flash Filesystem & Dual OTA</h2>
-            <button class="btn-action" id="btn-refresh-files">🔄 Refresh</button>
+            <h2>6.8MB Flash Filesystem & Dual OTA</h2>
+            <button class="btn-action" id="btn-refresh-files"> Refresh</button>
         </div>
         <div>
             <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted);">
@@ -297,8 +297,8 @@ print("Finished.")</textarea>
     <!-- Card 5: Plug & Play Hardware Devices -->
     <div class="card">
         <div class="card-header">
-            <h2>🔌 Plug & Play Hardware</h2>
-            <button class="btn-action" id="btn-scan-pnp">⚡ Scan Buses</button>
+            <h2>Plug & Play Hardware</h2>
+            <button class="btn-action" id="btn-scan-pnp"> Scan Buses</button>
         </div>
         <div class="device-grid" id="pnp-device-list">
             <div style="text-align:center; padding:15px; color:var(--text-muted); font-size:12px;">Discovering I2C sensors...</div>
@@ -308,8 +308,8 @@ print("Finished.")</textarea>
     <!-- Card 6: Dynamic Pin Matrix Manager -->
     <div class="card">
         <div class="card-header">
-            <h2>🎛️ Dynamic Pin Matrix</h2>
-            <button class="btn-action" id="btn-save-pins" style="background:var(--success); color:#022c22;">💾 Save Pins</button>
+            <h2>️ Dynamic Pin Matrix</h2>
+            <button class="btn-action" id="btn-save-pins" style="background:var(--success); color:#022c22;"> Save Pins</button>
         </div>
         <div class="pin-table-container">
             <table class="pin-table">
@@ -326,7 +326,7 @@ print("Finished.")</textarea>
     <!-- Card 7: micro-ROS & ROS 2 Distributed Robotics Node -->
     <div class="card">
         <div class="card-header">
-            <h2>🤖 micro-ROS & ROS 2 Node</h2>
+            <h2>micro-ROS & ROS 2 Node</h2>
             <span class="brand-chip" id="ros2-status-pill" style="color:var(--warning); border-color:var(--warning);">DISCONNECTED</span>
         </div>
         <div style="display:flex; flex-direction:column; gap:10px;">
@@ -345,7 +345,7 @@ print("Finished.")</textarea>
                 </div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button class="btn-action" id="btn-ros2-connect" style="flex:1; background:var(--success); color:#022c22; justify-content:center;">⚡ Connect Agent</button>
+                <button class="btn-action" id="btn-ros2-connect" style="flex:1; background:var(--success); color:#022c22; justify-content:center;"> Connect Agent</button>
                 <button class="btn-action" id="btn-ros2-disconnect" style="flex:1; background:#334155; color:#fff; justify-content:center;">Disconnect</button>
             </div>
             <div class="hud-panel" style="margin-top:4px;">
@@ -368,7 +368,7 @@ print("Finished.")</textarea>
     <!-- Card 8: 2D LiDAR SLAM & Autonomous A* Navigation -->
     <div class="card">
         <div class="card-header">
-            <h2>🗺️ 2D LiDAR SLAM & A* Navigation</h2>
+            <h2>️ 2D LiDAR SLAM & A* Navigation</h2>
             <span class="brand-chip" id="slam-nav-pill" style="color:var(--success); border-color:var(--success);">MAPPING ACTIVE</span>
         </div>
         <div style="display:flex; flex-direction:column; gap:12px;">
@@ -404,7 +404,7 @@ print("Finished.")</textarea>
     <!-- Card 9: Audio Edge AI, Voice Control & Speech Synthesis -->
     <div class="card">
         <div class="card-header">
-            <h2>🎙️ Audio Edge AI & Voice Synthesis</h2>
+            <h2>️ Audio Edge AI & Voice Synthesis</h2>
             <span class="brand-chip" id="audio-state-pill" style="color:var(--success); border-color:var(--success);">KWS LISTENING</span>
         </div>
         <div style="display:flex; flex-direction:column; gap:12px;">
@@ -433,7 +433,7 @@ print("Finished.")</textarea>
             <!-- Text to Speech & Sound Generator -->
             <div style="display:flex; gap:8px;">
                 <input type="text" id="tts-input" class="ik-input" placeholder="Enter phrase to synthesize speech..." value="Tamimystic OS online. Ready for mission." style="flex:3;">
-                <button class="btn-action" id="btn-tts-speak" style="flex:1; background:var(--primary); color:#082f49; justify-content:center;">🔊 Speak</button>
+                <button class="btn-action" id="btn-tts-speak" style="flex:1; background:var(--primary); color:#082f49; justify-content:center;"> Speak</button>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -465,7 +465,7 @@ print("Finished.")</textarea>
     <!-- Card 10: ESP-NOW 2.4GHz Swarm Mesh & Wireless Remote Controller -->
     <div class="card">
         <div class="card-header">
-            <h2>⚡ ESP-NOW Swarm Mesh & Remote</h2>
+            <h2>ESP-NOW Swarm Mesh & Remote</h2>
             <span class="brand-chip" id="espnow-role-pill" style="color:var(--primary); border-color:var(--primary);">STANDALONE</span>
         </div>
         <div style="display:flex; flex-direction:column; gap:12px;">
@@ -497,7 +497,7 @@ print("Finished.")</textarea>
 
             <div style="display:flex; gap:8px;">
                 <button class="btn-action" id="btn-espnow-apply" style="flex:1; background:var(--primary); color:#082f49; justify-content:center;">Apply Swarm Config</button>
-                <button class="btn-action" id="btn-espnow-remote-toggle" style="flex:1; background:#334155; color:#fff; justify-content:center;">🎮 Gamepad Remote: OFF</button>
+                <button class="btn-action" id="btn-espnow-remote-toggle" style="flex:1; background:#334155; color:#fff; justify-content:center;"> Gamepad Remote: OFF</button>
             </div>
 
             <!-- Active Peers Table -->
@@ -737,14 +737,14 @@ print("Finished.")</textarea>
     btnStop.addEventListener('click', () => {
         if (!isEStopped) {
             isEStopped = true;
-            btnStop.innerText = "🟢 RESUME MOTION";
+            btnStop.innerText = "RESUME MOTION";
             btnStop.style.background = "var(--success)";
             btnStop.style.color = "#022c22";
             fetch('/api/robot/stop', { method: 'POST' });
             log("[ROBOT:SAFETY] Emergency Stop Triggered!");
         } else {
             isEStopped = false;
-            btnStop.innerText = "🛑 EMERGENCY BRAKE";
+            btnStop.innerText = "EMERGENCY BRAKE";
             btnStop.style.background = "var(--danger)";
             btnStop.style.color = "white";
             fetch('/api/robot/resume', { method: 'POST' });
@@ -814,7 +814,7 @@ print("Pick complete!")`;
                 data.files.forEach(f => {
                     html += `
                     <div class="file-row">
-                        <span><strong>📄 ${f.name}</strong> <small style="color:var(--text-muted);">(${f.size} B)</small></span>
+                        <span><strong> ${f.name}</strong> <small style="color:var(--text-muted);">(${f.size} B)</small></span>
                         <button class="btn-action" style="background:var(--danger); color:#fff; padding:2px 6px; font-size:10px;" onclick="deleteFile('${f.name}')">Delete</button>
                     </div>`;
                 });
@@ -852,7 +852,7 @@ print("Pick complete!")`;
     btnTrack.addEventListener('click', () => {
         isTracking = !isTracking;
         btnTrack.classList.toggle('active', isTracking);
-        btnTrack.innerText = isTracking ? "🎯 Auto-Follow: ON" : "🎯 Auto-Follow: OFF";
+        btnTrack.innerText = isTracking ? " Auto-Follow: ON" : " Auto-Follow: OFF";
         fetch(`/api/ai/track?enable=${isTracking ? '1' : '0'}`, { method: 'POST' });
         log(`[AI:AUTONOMY] Visual target tracking ${isTracking ? 'ACTIVATED' : 'DEACTIVATED'}`);
     });
@@ -863,7 +863,7 @@ print("Pick complete!")`;
             .then(data => {
                 if (data.status === 'ok') {
                     document.getElementById('ai-fps-badge').innerText = `${data.fps.toFixed(1)} FPS | ${data.latency_ms}ms`;
-                    document.getElementById('ai-target-badge').innerText = `🎯 Locked: ${data.object} (${data.confidence.toFixed(1)}%)`;
+                    document.getElementById('ai-target-badge').innerText = ` Locked: ${data.object} (${data.confidence.toFixed(1)}%)`;
 
                     aiCtx.clearRect(0, 0, aiCanvas.width, aiCanvas.height);
                     if (data.boxes) {
@@ -908,7 +908,7 @@ print("Pick complete!")`;
                     html += `
                     <div class="device-item">
                         <div class="dev-info">
-                            <span style="font-size:18px;">${dev.icon || '🔌'}</span>
+                            <span style="font-size:18px;">${dev.icon || ''}</span>
                             <div>
                                 <div class="dev-title">${dev.name}</div>
                                 <div class="dev-meta">
@@ -969,7 +969,7 @@ print("Pick complete!")`;
                         document.getElementById('hud-dist').innerText = data.obstacle_dist_cm.toFixed(1) + ' cm';
                         const radar = document.getElementById('obstacle-radar');
                         if (data.braking) {
-                            radar.innerText = "🛑 Obstacle Braking!";
+                            radar.innerText = " Obstacle Braking!";
                             radar.style.color = "var(--danger)";
                         } else {
                             radar.innerText = "Radar: Clear";
@@ -1300,7 +1300,7 @@ print("Pick complete!")`;
 
                 espnowRemoteEnabled = data.remote_active;
                 const rBtn = document.getElementById('btn-espnow-remote-toggle');
-                rBtn.innerText = `🎮 Gamepad Remote: ${data.remote_active ? "ON" : "OFF"}`;
+                rBtn.innerText = `Gamepad Remote: ${data.remote_active ? "ON" : "OFF"}`;
                 rBtn.style.background = data.remote_active ? "var(--success)" : "#334155";
                 rBtn.style.color = data.remote_active ? "#022c22" : "#fff";
 

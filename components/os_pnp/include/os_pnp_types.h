@@ -36,16 +36,16 @@ inline const char* deviceCategoryToString(DeviceCategory cat) {
 
 inline const char* deviceCategoryToIcon(DeviceCategory cat) {
     switch (cat) {
-        case DeviceCategory::IMU_MOTION:     return "🧭";
-        case DeviceCategory::SERVO_DRIVER:   return "🦾";
-        case DeviceCategory::DISPLAY_OLED:   return "📟";
-        case DeviceCategory::DISTANCE_TOF:   return "📏";
-        case DeviceCategory::ENVIRONMENTAL:  return "🌡️";
-        case DeviceCategory::POWER_MONITOR:  return "⚡";
-        case DeviceCategory::IO_EXPANDER:    return "🔌";
-        case DeviceCategory::PRECISION_ADC:  return "📊";
-        case DeviceCategory::LIGHT_SENSOR:   return "💡";
-        default:                             return "⚙️";
+        case DeviceCategory::IMU_MOTION:     return "[IMU]";
+        case DeviceCategory::SERVO_DRIVER:   return "[SERVO]";
+        case DeviceCategory::DISPLAY_OLED:   return "[OLED]";
+        case DeviceCategory::DISTANCE_TOF:   return "[TOF]";
+        case DeviceCategory::ENVIRONMENTAL:  return "[ENV]";
+        case DeviceCategory::POWER_MONITOR:  return "[PWR]";
+        case DeviceCategory::IO_EXPANDER:    return "[IO]";
+        case DeviceCategory::PRECISION_ADC:  return "[ADC]";
+        case DeviceCategory::LIGHT_SENSOR:   return "[LIGHT]";
+        default:                             return "[DEV]";
     }
 }
 
