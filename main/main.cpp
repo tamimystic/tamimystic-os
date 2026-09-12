@@ -18,6 +18,7 @@
 #include "os_slam.h"
 #include "os_audio.h"
 #include "os_espnow.h"
+#include "os_ble.h"
 
 using namespace TamimysticOS;
 
@@ -65,6 +66,9 @@ void os_core_start() {
 
     // 12. Initialize 2.4GHz ESP-NOW Swarm Mesh & Gamepad Radio
     EspNowEngine::getInstance().init();
+
+    // 13. Initialize Bluetooth Low Energy (BLE 5.0) & Web Bluetooth
+    BleManager::getInstance().init();
 
     // Background Task for System Heartbeat
     OSScheduler::getInstance().createTask("sys_heartbeat", 2048, 1, CORE_0, []() {

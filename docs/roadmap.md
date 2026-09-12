@@ -76,13 +76,15 @@ graph TD
 
 ---
 
-## Phase 9: Bluetooth Low Energy (BLE 5.0) and Web Bluetooth Mobile App
+## Phase 9: Bluetooth Low Energy (BLE 5.0) and Web Bluetooth Mobile App [COMPLETED]
 
 * **NimBLE GATT Server**:
   - Lightweight BLE stack consuming $< 25\text{ KB}$ RAM.
-  - Custom Robotics Service UUID for real-time Joystick Twist $(v_x, v_y, \omega)$, arm joints, and live telemetry.
+  - Custom Robotics Service UUID (`19B10000-...-1214`) exposing real-time Joystick Twist ($v_x, v_y, \omega_z$), 6-DOF arm joints, and 20Hz telemetry notification feeds.
 * **Web Bluetooth Companion Web App**:
-  - Connects directly from Chrome / Safari on Android and iOS devices without downloading apps from app stores.
+  - Connects directly from Chrome / Edge on Android, iOS, Windows, macOS, and Linux without downloading apps from app stores.
+* **MicroPython & CLI Integration**:
+  - Full support via `tamimystic.ble.*` and `ble status|adv|disconnect` CLI commands.
 
 ---
 

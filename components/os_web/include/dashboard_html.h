@@ -521,18 +521,63 @@ print("Finished.")</textarea>
         </div>
     </div>
 
-    <!-- Card 11: Live Event Logs (Full Width) -->
+    <!-- Card 11: Bluetooth Low Energy (BLE 5.0) & Web Bluetooth -->
+    <div class="card">
+        <div class="card-header">
+            <h2>BLE 5.0 & Web Bluetooth App</h2>
+            <span class="brand-chip" id="ble-state-pill" style="color:var(--primary); border-color:var(--primary);">DISCONNECTED</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="background:rgba(15, 23, 42, 0.6); border-radius:10px; padding:12px; border:1px solid var(--border); display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:12px; font-weight:bold; color:var(--primary);">Web Bluetooth Direct Connect</span>
+                    <span style="font-size:10px; color:var(--text-muted);">No App Install Needed</span>
+                </div>
+                <p style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+                    Pair your smartphone or laptop directly to the robot via Web Bluetooth in Google Chrome / Edge for zero-latency control.
+                </p>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-action" id="btn-web-ble-connect" style="flex:2; background:var(--primary); color:#082f49; justify-content:center; padding:10px; font-weight:bold;">
+                        Pair Web Bluetooth
+                    </button>
+                    <button class="btn-action" id="btn-ble-adv-toggle" style="flex:1; background:#334155; color:#fff; justify-content:center;">
+                        Adv: ON
+                    </button>
+                </div>
+            </div>
+
+            <div class="hud-panel">
+                <div class="hud-row">
+                    <span>Device Name / Peer Address</span>
+                    <span class="hud-val" id="ble-device-peer-val">Tamimystic-Bot | None</span>
+                </div>
+                <div class="hud-row">
+                    <span>GATT Service UUID</span>
+                    <span class="hud-val" style="font-size:10px; font-family:monospace; color:var(--accent);">19B10000-...-1214</span>
+                </div>
+                <div class="hud-row">
+                    <span>BLE Packets (TX / RX)</span>
+                    <span class="hud-val" id="ble-packets-val">0 / 0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 12: Live Event Logs (Full Width) -->
     <div class="card" style="grid-column: 1 / -1;">
         <div class="card-header">
-            <h2>📜 Real-Time System Event Logs</h2>
+            <h2>System Event Logs</h2>
             <button class="btn-action" id="btn-clear-logs" style="background:#334155; color:#cbd5e1;">Clear</button>
         </div>
         <div class="log-box" id="sys-logs">
             <p><span class="log-time">00:00:01</span> [BOOT] Tamimystic OS initialized on ESP32-S3-N16R8 (16MB Flash, 8MB PSRAM).</p>
-            <p><span class="log-time">00:00:02</span> [ROBOTICS] Core 1 real-time 50Hz kinematics loop running.</p>
-            <p><span class="log-time">00:00:03</span> [AI] TensorFlow Lite Micro with ESP-NN SIMD active (20 FPS).</p>
+            <p><span class="log-time">00:00:02</span> [ROBOTICS] Core 1 real-time 1000Hz kinematics loop running.</p>
+            <p><span class="log-time">00:00:03</span> [AI] TensorFlow Lite Micro with ESP-NN SIMD active (55 FPS).</p>
             <p><span class="log-time">00:00:04</span> [ROS2] micro-ROS Node initialized with 6 active DDS topics.</p>
-            <p><span class="log-time">00:00:05</span> [APPS] MicroPython and WASM runtime engine active.</p>
+            <p><span class="log-time">00:00:05</span> [SLAM] 2D LiDAR Occupancy Grid Mapping & A* planner ready.</p>
+            <p><span class="log-time">00:00:06</span> [AUDIO] 16kHz I2S Audio Pipeline & Keyword Spotting active.</p>
+            <p><span class="log-time">00:00:07</span> [ESPNOW] 2.4GHz Swarm Mesh Radio active on Channel 1.</p>
+            <p><span class="log-time">00:00:08</span> [BLE] Bluetooth Low Energy 5.0 GATT Server advertising ready.</p>
         </div>
     </div>
 </div>
@@ -1309,6 +1354,74 @@ print("Pick complete!")`;
             .then(() => setTimeout(fetchEspNowData, 200));
     });
 
+    // Bluetooth Low Energy & Web Bluetooth Logic
+    let bleAdvertising = true;
+    let bluetoothDevice = null;
+    let twistCharacteristic = null;
+
+    function fetchBleData() {
+        fetch('/api/ble/status')
+            .then(res => res.json())
+            .then(data => {
+                const pill = document.getElementById('ble-state-pill');
+                pill.innerText = data.status;
+                if (data.status === 'CONNECTED') {
+                    pill.style.color = "var(--success)";
+                    pill.style.borderColor = "var(--success)";
+                } else if (data.status === 'ADVERTISING') {
+                    pill.style.color = "var(--primary)";
+                    pill.style.borderColor = "var(--primary)";
+                } else {
+                    pill.style.color = "var(--text-muted)";
+                    pill.style.borderColor = "var(--border)";
+                }
+
+                bleAdvertising = data.advertising;
+                const advBtn = document.getElementById('btn-ble-adv-toggle');
+                advBtn.innerText = `Adv: ${data.advertising ? "ON" : "OFF"}`;
+                advBtn.style.background = data.advertising ? "#334155" : "rgba(248, 113, 113, 0.2)";
+
+                const peer = data.peer_mac || "None";
+                document.getElementById('ble-device-peer-val').innerText = `${data.device_name} | ${peer}`;
+                document.getElementById('ble-packets-val').innerText = `${data.packets_tx} / ${data.packets_rx}`;
+            })
+            .catch(() => {});
+    }
+
+    document.getElementById('btn-ble-adv-toggle').addEventListener('click', () => {
+        const nextState = !bleAdvertising;
+        log(`[BLE] Toggling BLE 5.0 Advertising: ${nextState}`);
+        fetch(`/api/ble/adv?action=${nextState ? "start" : "stop"}`, { method: 'POST' })
+            .then(() => setTimeout(fetchBleData, 200));
+    });
+
+    document.getElementById('btn-web-ble-connect').addEventListener('click', async () => {
+        try {
+            if (!navigator.bluetooth) {
+                alert("Web Bluetooth is not supported in this browser. Use Google Chrome or Microsoft Edge on Android, Windows, macOS, or Linux.");
+                return;
+            }
+            log("[WEB-BLE] Scanning for Tamimystic OS Bluetooth Device...");
+            bluetoothDevice = await navigator.bluetooth.requestDevice({
+                filters: [{ namePrefix: 'Tamimystic' }],
+                optionalServices: ['19b10000-e8f2-537e-4f6c-d104768a1214']
+            });
+
+            log(`[WEB-BLE] Connecting to GATT Server on ${bluetoothDevice.name}...`);
+            const server = await bluetoothDevice.gatt.connect();
+            const service = await server.getPrimaryService('19b10000-e8f2-537e-4f6c-d104768a1214');
+            twistCharacteristic = await service.getCharacteristic('19b10001-e8f2-537e-4f6c-d104768a1214');
+
+            log("[WEB-BLE] Connected successfully over Bluetooth Low Energy 5.0!");
+            document.getElementById('btn-web-ble-connect').innerText = "Connected (BLE)";
+            document.getElementById('btn-web-ble-connect').style.background = "var(--success)";
+            document.getElementById('btn-web-ble-connect').style.color = "#022c22";
+            fetchBleData();
+        } catch (err) {
+            log(`[WEB-BLE:ERR] ${err.message}`);
+        }
+    });
+
     fetchPnPDevices();
     fetchPinMatrix();
     fetchFiles();
@@ -1316,12 +1429,14 @@ print("Pick complete!")`;
     fetchSlamData();
     fetchAudioData();
     fetchEspNowData();
+    fetchBleData();
     setInterval(fetchPnPDevices, 4000);
     setInterval(fetchTelemetry, 1000);
     setInterval(fetchRos2Status, 2000);
     setInterval(fetchSlamData, 1500);
     setInterval(fetchAudioData, 500);
     setInterval(fetchEspNowData, 1500);
+    setInterval(fetchBleData, 1500);
 </script>
 
 </body>

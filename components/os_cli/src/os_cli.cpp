@@ -12,6 +12,7 @@
 #include "os_slam.h"
 #include "os_audio.h"
 #include "os_espnow.h"
+#include "os_ble.h"
 
 #include <iostream>
 #include <sstream>
@@ -599,6 +600,36 @@ void CLI::init() {
         }
     });
 
+    // Bluetooth Low Energy (BLE 5.0) commands
+    registerCommand("ble", "Manage BLE 5.0 GATT server and Web Bluetooth (status|adv <start|stop>|disconnect)", [](const std::vector<std::string>& args) {
+        if (args.size() < 2 || args[1] == "status") {
+            auto st = BleManager::getInstance().getStatus();
+            std::ostringstream ss;
+            ss << "=== BLE 5.0 GATT Server Status ===\n"
+               << "  Device Name:       " << st.device_name << "\n"
+               << "  State:             " << bleConnectionStateToString(st.state) << "\n"
+               << "  Advertising:       " << (st.advertising ? "ACTIVE" : "STOPPED") << "\n"
+               << "  Connected Clients: " << st.connected_clients << "\n"
+               << "  Peer Address:      " << (st.peer_mac.empty() ? "None" : st.peer_mac) << "\n"
+               << "  Service UUID:      " << BLE_ROBOTICS_SERVICE_UUID << "\n"
+               << "  Packets RX:        " << st.packets_rx << " | Packets TX: " << st.packets_tx << "\n";
+            hal_uart_print(ss.str().c_str());
+        } else if (args[1] == "adv" && args.size() >= 3) {
+            if (args[2] == "start") {
+                BleManager::getInstance().startAdvertising();
+                hal_uart_print("[BLE] Advertising started.\n");
+            } else if (args[2] == "stop") {
+                BleManager::getInstance().stopAdvertising();
+                hal_uart_print("[BLE] Advertising stopped.\n");
+            }
+        } else if (args[1] == "disconnect") {
+            BleManager::getInstance().disconnect();
+            hal_uart_print("[BLE] Disconnected active client.\n");
+        } else {
+            hal_uart_print("Unknown ble subcommand. Usage: ble [status|adv <start|stop>|disconnect]\n");
+        }
+    });
+
 #ifdef OS_TARGET_NATIVE
     hal_uart_print("[CLI] Starting Native CLI Thread...\n");
     cli_thread = std::thread(native_cli_task_func);
@@ -624,7 +655,7 @@ void CLI::processLoop() {
 #endif
 
     while (true) {
-        hal_uart_print("aeron> ");
+        hal_uart_print("tamimystic> ");
         hal_uart_read_line(input_buffer, sizeof(input_buffer));
         
         std::string line(input_buffer);

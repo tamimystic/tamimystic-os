@@ -9,6 +9,7 @@
 #include "os_slam.h"
 #include "os_audio.h"
 #include "os_espnow.h"
+#include "os_ble.h"
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
@@ -288,6 +289,23 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
             EspNowEngine::getInstance().sendCustomPayload(mac_s, msg_s);
             stdout_stream += "[ESPNOW:TX] Sent to " + mac_s + ": " + msg_s + "\n";
         }
+        return;
+    }
+
+    // 21. tamimystic.ble.adv(True/False)
+    if (line.rfind("tamimystic.ble.adv(", 0) == 0 && line.back() == ')') {
+        std::string en_str = line.substr(19, line.length() - 20);
+        bool en = (en_str == "True" || en_str == "true" || en_str == "1");
+        if (en) BleManager::getInstance().startAdvertising();
+        else BleManager::getInstance().stopAdvertising();
+        stdout_stream += std::string("[BLE] Advertising ") + (en ? "STARTED\n" : "STOPPED\n");
+        return;
+    }
+
+    // 22. tamimystic.ble.disconnect()
+    if (line == "tamimystic.ble.disconnect()") {
+        BleManager::getInstance().disconnect();
+        stdout_stream += "[BLE] Disconnected active client.\n";
         return;
     }
 }

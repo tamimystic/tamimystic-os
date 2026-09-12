@@ -11,6 +11,7 @@
 #include "os_slam.h"
 #include "os_audio.h"
 #include "os_espnow.h"
+#include "os_ble.h"
 #include "dashboard_html.h"
 #include "esp_http_server.h"
 #include <string>
@@ -578,13 +579,39 @@ static esp_err_t espnow_send_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+static esp_err_t ble_status_handler(httpd_req_t *req) {
+    std::string json = BleManager::getInstance().getBleJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t ble_adv_handler(httpd_req_t *req) {
+    char query[64];
+    char action[16] = {0};
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "action", action, sizeof(action));
+    }
+    bool ok = false;
+    if (strcmp(action, "stop") == 0) {
+        ok = BleManager::getInstance().stopAdvertising();
+    } else {
+        ok = BleManager::getInstance().startAdvertising();
+    }
+    std::string resp = std::string("{\"status\":\"") + (ok ? "ok" : "error") + "\",\"advertising\":" + 
+                       (BleManager::getInstance().isAdvertising() ? "true" : "false") + "}";
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, resp.c_str(), resp.length());
+    return ESP_OK;
+}
+
 void WebServer::start() {
     if (is_running) return;
     
     hal_uart_print("[WEB] Starting ESP32 HTTP Server on Port 80...\n");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 70;
+    config.max_uri_handlers = 80;
     
     if (httpd_start(&server, &config) == ESP_OK) {
         httpd_uri_t uri_dash = { .uri = "/", .method = HTTP_GET, .handler = dashboard_get_handler, .user_ctx = NULL };
@@ -623,7 +650,7 @@ void WebServer::start() {
         httpd_uri_t uri_slam_lidar = { .uri = "/api/slam/lidar", .method = HTTP_POST, .handler = slam_lidar_handler, .user_ctx = NULL };
 
         httpd_uri_t uri_audio_status = { .uri = "/api/audio/status", .method = HTTP_GET, .handler = audio_status_handler, .user_ctx = NULL };
-        httpd_uri_t uri_audio_wave = { .uri = "/api/audio/waveform", .method = HTTP_GET, .handler = audio_waveform_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_wave = { .uri = "/api/audio/wave", .method = HTTP_GET, .handler = audio_wave_handler, .user_ctx = NULL };
         httpd_uri_t uri_audio_say = { .uri = "/api/audio/say", .method = HTTP_POST, .handler = audio_say_handler, .user_ctx = NULL };
         httpd_uri_t uri_audio_tone = { .uri = "/api/audio/tone", .method = HTTP_POST, .handler = audio_tone_handler, .user_ctx = NULL };
         httpd_uri_t uri_audio_beep = { .uri = "/api/audio/beep", .method = HTTP_POST, .handler = audio_beep_handler, .user_ctx = NULL };
@@ -636,6 +663,9 @@ void WebServer::start() {
         httpd_uri_t uri_espnow_swarm = { .uri = "/api/espnow/swarm", .method = HTTP_POST, .handler = espnow_swarm_handler, .user_ctx = NULL };
         httpd_uri_t uri_espnow_remote = { .uri = "/api/espnow/remote", .method = HTTP_POST, .handler = espnow_remote_handler, .user_ctx = NULL };
         httpd_uri_t uri_espnow_send = { .uri = "/api/espnow/send", .method = HTTP_POST, .handler = espnow_send_handler, .user_ctx = NULL };
+
+        httpd_uri_t uri_ble_status = { .uri = "/api/ble/status", .method = HTTP_GET, .handler = ble_status_handler, .user_ctx = NULL };
+        httpd_uri_t uri_ble_adv = { .uri = "/api/ble/adv", .method = HTTP_POST, .handler = ble_adv_handler, .user_ctx = NULL };
 
         httpd_register_uri_handler(server, &uri_dash);
         httpd_register_uri_handler(server, &uri_pnp_dev);
@@ -679,8 +709,10 @@ void WebServer::start() {
         httpd_register_uri_handler(server, &uri_espnow_swarm);
         httpd_register_uri_handler(server, &uri_espnow_remote);
         httpd_register_uri_handler(server, &uri_espnow_send);
+        httpd_register_uri_handler(server, &uri_ble_status);
+        httpd_register_uri_handler(server, &uri_ble_adv);
 
-        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2, SLAM, Audio & ESP-NOW endpoints active.\n");
+        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2, SLAM, Audio, ESP-NOW & BLE 5.0 endpoints active.\n");
         is_running = true;
     } else {
         hal_uart_print("[WEB] Failed to start HTTP Server!\n");

@@ -399,3 +399,41 @@ Returns recent 32 spectral energy samples for live visualizer.
 * **Parameters**: `enable` (`1` or `0`).
 * **Example**: `POST /api/espnow/remote?enable=1`
 * **Response Body**: `{"status": "ok"}`
+
+---
+
+## 10. Bluetooth Low Energy (BLE 5.0) Endpoints
+
+### `GET /api/ble/status`
+Retrieves the real-time status of the NimBLE GATT Server, active connections, and packet statistics.
+* **Response Body**:
+```json
+{
+  "status": "ADVERTISING",
+  "device_name": "Tamimystic-Bot",
+  "advertising": true,
+  "connected_clients": 0,
+  "peer_mac": "",
+  "rssi_dbm": -127,
+  "packets_rx": 0,
+  "packets_tx": 0,
+  "service_uuid": "19B10000-E8F2-537E-4F6C-D104768A1214",
+  "char_twist_uuid": "19B10001-E8F2-537E-4F6C-D104768A1214",
+  "char_arm_uuid": "19B10002-E8F2-537E-4F6C-D104768A1214",
+  "char_telemetry_uuid": "19B10003-E8F2-537E-4F6C-D104768A1214",
+  "char_sensor_uuid": "19B10004-E8F2-537E-4F6C-D104768A1214"
+}
+```
+
+### `POST /api/ble/adv`
+Controls BLE 5.0 GAP advertising.
+* **Parameters**: `action` (`start` or `stop`).
+* **Example**: `POST /api/ble/adv?action=start`
+* **Response Body**:
+```json
+{
+  "status": "ok",
+  "advertising": true
+}
+```
+

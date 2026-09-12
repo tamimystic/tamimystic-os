@@ -104,7 +104,7 @@ Enable ultra-low-latency wireless control ($< 4\text{ ms}$) without requiring a 
 
 ---
 
-## Phase 9: Bluetooth Low Energy (BLE 5.0) and Web Bluetooth Mobile App
+## Phase 9: Bluetooth Low Energy (BLE 5.0) and Web Bluetooth Mobile App [COMPLETED]
 
 ### Objective
 Allow zero-install smartphone and tablet control using Bluetooth Low Energy and modern Web Bluetooth API.
@@ -112,12 +112,16 @@ Allow zero-install smartphone and tablet control using Bluetooth Low Energy and 
 ### Technical Architecture
 * **NimBLE GATT Server**:
   - Lightweight BLE stack consuming $< 25\text{ KB}$ RAM.
-  - Custom Robotics Service UUID exposing:
-    - `0xFF01`: Real-time Joystick Twist $(v_x, v_y, \omega)$ Characteristic (Write Without Response).
+  - Custom Robotics Service UUID (`19B10000-E8F2-537E-4F6C-D104768A1214`) exposing:
+    - `0xFF01`: Real-time Joystick Twist $(v_x, v_y, \omega_z)$ Characteristic (Write Without Response).
     - `0xFF02`: Robotic Arm 6-DOF Joint Angles Characteristic.
-    - `0xFF03`: Sensor Telemetry and Battery Level Characteristic (Notify).
+    - `0xFF03`: System Telemetry and Battery Level Characteristic (Notify @ 20Hz).
+    - `0xFF04`: Real-Time Sensor Feed (IMU & ToF Distance) Characteristic.
+    - `0xFF05`: System Command & E-STOP Characteristic.
 * **Web Bluetooth Companion Web App**:
-  - Connects directly from Chrome / Safari on Android and iOS devices without downloading apps from app stores.
+  - Connects directly from Chrome / Edge on Android, iOS, Windows, macOS, and Linux without downloading apps from app stores.
+* **MicroPython & CLI Integration**:
+  - Full support via `tamimystic.ble.*` and `ble status|adv|disconnect` CLI commands.
 
 ---
 

@@ -11,6 +11,7 @@
 #include "os_slam.h"
 #include "os_audio.h"
 #include "os_espnow.h"
+#include "os_ble.h"
 #include <thread>
 #include <atomic>
 #include "httplib.h"
@@ -503,6 +504,26 @@ void WebServer::start() {
         };
         svr->Post("/api/espnow/send", handle_espnow_send);
         svr->Get("/api/espnow/send", handle_espnow_send);
+
+        // API for BLE 5.0 GATT Server & Web Bluetooth Status
+        svr->Get("/api/ble/status", [](const httplib::Request& req, httplib::Response& res) {
+            res.set_content(BleManager::getInstance().getBleJson(), "application/json");
+        });
+
+        // API for BLE Advertising Control
+        auto handle_ble_adv = [](const httplib::Request& req, httplib::Response& res) {
+            std::string action = req.has_param("action") ? req.get_param_value("action") : "start";
+            bool ok = false;
+            if (action == "stop") {
+                ok = BleManager::getInstance().stopAdvertising();
+            } else {
+                ok = BleManager::getInstance().startAdvertising();
+            }
+            res.set_content(std::string("{\"status\":\"") + (ok ? "ok" : "error") + "\",\"advertising\":" + 
+                            (BleManager::getInstance().isAdvertising() ? "true" : "false") + "}", "application/json");
+        };
+        svr->Post("/api/ble/adv", handle_ble_adv);
+        svr->Get("/api/ble/adv", handle_ble_adv);
 
         // API for File Upload (OTA / Models / Apps)
         svr->Post("/api/upload", [](const httplib::Request& req, httplib::Response& res) {
