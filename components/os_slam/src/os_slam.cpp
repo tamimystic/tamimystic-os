@@ -121,9 +121,7 @@ void SlamEngine::ingestScan(const LidarScanData& scan) {
     latest_scan = scan;
     total_scans++;
 
-    // Update current robot pose from kinematics telemetry
-    auto tel = RobotController::getInstance().getTelemetry();
-    // Odometry updates robot pose
+    // Calculate robot grid coordinate
     GridCoord robot_grid = worldToGrid(robot_pose.x_cm, robot_pose.y_cm);
 
     float rad_offset = robot_pose.yaw_deg * 0.0174533f;

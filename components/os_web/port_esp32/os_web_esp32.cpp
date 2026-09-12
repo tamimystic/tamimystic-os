@@ -475,7 +475,7 @@ static esp_err_t audio_cmd_handler(httpd_req_t *req) {
         httpd_query_key_value(query, "cmd", cmd_str, sizeof(cmd_str));
     }
     if (cmd_str[0]) {
-        VoiceCommand c = AudioEngine::getInstance().triggerKwsTest(cmd_str);
+        AudioEngine::getInstance().triggerKwsTest(cmd_str);
         httpd_resp_set_type(req, "application/json");
         httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
         return ESP_OK;
