@@ -50,7 +50,7 @@ private:
     Point2D gridToWorld(int gx, int gy) const;
 
     LidarType lidar_type = LidarType::SIMULATED_360;
-    int8_t grid_map[SLAM_GRID_WIDTH][SLAM_GRID_HEIGHT]; // Allocated in PSRAM
+    std::vector<int8_t> grid_map; // Dynamically allocated in PSRAM/heap
 
     LidarScanData latest_scan;
     SlamRobotPose robot_pose;

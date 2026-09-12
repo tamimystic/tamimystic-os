@@ -36,7 +36,11 @@ void SlamEngine::init() {
 }
 
 void SlamEngine::clearMap() {
-    std::memset(grid_map, 0, sizeof(grid_map)); // All set to UNKNOWN (0)
+    if (grid_map.size() != SLAM_GRID_WIDTH * SLAM_GRID_HEIGHT) {
+        grid_map.assign(SLAM_GRID_WIDTH * SLAM_GRID_HEIGHT, 0);
+    } else {
+        std::fill(grid_map.begin(), grid_map.end(), 0);
+    }
     explored_cells = 0;
     robot_pose = {0.0f, 0.0f, 0.0f};
     nav_goal = {0.0f, 0.0f, false, false};
@@ -65,15 +69,18 @@ Point2D SlamEngine::gridToWorld(int gx, int gy) const {
 
 int8_t SlamEngine::getCell(int grid_x, int grid_y) const {
     if (grid_x < 0 || grid_x >= SLAM_GRID_WIDTH || grid_y < 0 || grid_y >= SLAM_GRID_HEIGHT) return 100;
-    return grid_map[grid_x][grid_y];
+    if (grid_map.empty()) return 0;
+    return grid_map[grid_x * SLAM_GRID_HEIGHT + grid_y];
 }
 
 void SlamEngine::setCell(int grid_x, int grid_y, int8_t value) {
     if (grid_x < 0 || grid_x >= SLAM_GRID_WIDTH || grid_y < 0 || grid_y >= SLAM_GRID_HEIGHT) return;
-    if (grid_map[grid_x][grid_y] == 0 && value != 0) {
+    if (grid_map.empty()) return;
+    size_t idx = grid_x * SLAM_GRID_HEIGHT + grid_y;
+    if (grid_map[idx] == 0 && value != 0) {
         explored_cells++;
     }
-    grid_map[grid_x][grid_y] = value;
+    grid_map[idx] = value;
 }
 
 void SlamEngine::updatePose(float x_cm, float y_cm, float yaw_deg) {
@@ -214,17 +221,12 @@ std::vector<GridCoord> SlamEngine::planAStar(const GridCoord& start, const GridC
     std::vector<GridCoord> path;
     if (start == goal) return path;
 
-    static float g_score[SLAM_GRID_WIDTH][SLAM_GRID_HEIGHT];
-    static GridCoord parent_map[SLAM_GRID_WIDTH][SLAM_GRID_HEIGHT];
-    static bool closed_set[SLAM_GRID_WIDTH][SLAM_GRID_HEIGHT];
+    const size_t total_cells = SLAM_GRID_WIDTH * SLAM_GRID_HEIGHT;
+    std::vector<float> g_score(total_cells, 1e9f);
+    std::vector<GridCoord> parent_map(total_cells, {-1, -1});
+    std::vector<uint8_t> closed_set(total_cells, 0);
 
-    for (int x = 0; x < SLAM_GRID_WIDTH; x++) {
-        for (int y = 0; y < SLAM_GRID_HEIGHT; y++) {
-            g_score[x][y] = 1e9f;
-            parent_map[x][y] = {-1, -1};
-            closed_set[x][y] = false;
-        }
-    }
+    auto get_idx = [](int x, int y) { return x * SLAM_GRID_HEIGHT + y; };
 
     std::priority_queue<AStarNode, std::vector<AStarNode>, CompareNode> open_set;
 
@@ -232,7 +234,7 @@ std::vector<GridCoord> SlamEngine::planAStar(const GridCoord& start, const GridC
     start_node.coord = start;
     start_node.g_cost = 0.0f;
     start_node.h_cost = std::sqrt(std::pow(goal.x - start.x, 2) + std::pow(goal.y - start.y, 2));
-    g_score[start.x][start.y] = 0.0f;
+    g_score[get_idx(start.x, start.y)] = 0.0f;
     open_set.push(start_node);
 
     const int dx[8] = {1, -1, 0, 0, 1, 1, -1, -1};
@@ -250,18 +252,20 @@ std::vector<GridCoord> SlamEngine::planAStar(const GridCoord& start, const GridC
             break;
         }
 
-        if (closed_set[current.coord.x][current.coord.y]) continue;
-        closed_set[current.coord.x][current.coord.y] = true;
+        size_t cur_idx = get_idx(current.coord.x, current.coord.y);
+        if (closed_set[cur_idx]) continue;
+        closed_set[cur_idx] = 1;
 
         for (int i = 0; i < 8; i++) {
             int nx = current.coord.x + dx[i];
             int ny = current.coord.y + dy[i];
 
             if (nx < 0 || nx >= SLAM_GRID_WIDTH || ny < 0 || ny >= SLAM_GRID_HEIGHT) continue;
-            if (closed_set[nx][ny]) continue;
+            size_t n_idx = get_idx(nx, ny);
+            if (closed_set[n_idx]) continue;
 
             // Obstacle collision check (cell == 100 is occupied)
-            if (grid_map[nx][ny] == 100) continue;
+            if (getCell(nx, ny) == 100) continue;
 
             // Safety inflation check (check neighbors within 1 cell)
             bool near_obstacle = false;
@@ -270,7 +274,7 @@ std::vector<GridCoord> SlamEngine::planAStar(const GridCoord& start, const GridC
                     int c_x = nx + ix;
                     int c_y = ny + iy;
                     if (c_x >= 0 && c_x < SLAM_GRID_WIDTH && c_y >= 0 && c_y < SLAM_GRID_HEIGHT) {
-                        if (grid_map[c_x][c_y] == 100) {
+                        if (getCell(c_x, c_y) == 100) {
                             near_obstacle = true;
                             break;
                         }
@@ -280,9 +284,9 @@ std::vector<GridCoord> SlamEngine::planAStar(const GridCoord& start, const GridC
             if (near_obstacle) continue;
 
             float tentative_g = current.g_cost + step_cost[i];
-            if (tentative_g < g_score[nx][ny]) {
-                g_score[nx][ny] = tentative_g;
-                parent_map[nx][ny] = current.coord;
+            if (tentative_g < g_score[n_idx]) {
+                g_score[n_idx] = tentative_g;
+                parent_map[n_idx] = current.coord;
 
                 AStarNode neighbor;
                 neighbor.coord = {nx, ny};
@@ -297,7 +301,7 @@ std::vector<GridCoord> SlamEngine::planAStar(const GridCoord& start, const GridC
         GridCoord curr = goal;
         while (curr != start && curr.x != -1) {
             path.push_back(curr);
-            curr = parent_map[curr.x][curr.y];
+            curr = parent_map[get_idx(curr.x, curr.y)];
         }
         std::reverse(path.begin(), path.end());
     }
@@ -430,7 +434,7 @@ std::string SlamEngine::getCompressedMapJson() {
     bool first = true;
     for (int x = 0; x < SLAM_GRID_WIDTH; x++) {
         for (int y = 0; y < SLAM_GRID_HEIGHT; y++) {
-            if (grid_map[x][y] == 100) {
+            if (getCell(x, y) == 100) {
                 if (!first) ss << ",";
                 ss << "[" << x << "," << y << "]";
                 first = false;
