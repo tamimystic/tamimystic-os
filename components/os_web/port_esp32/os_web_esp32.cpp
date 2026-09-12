@@ -652,7 +652,7 @@ void WebServer::start() {
         httpd_uri_t uri_slam_lidar = { .uri = "/api/slam/lidar", .method = HTTP_POST, .handler = slam_lidar_handler, .user_ctx = NULL };
 
         httpd_uri_t uri_audio_status = { .uri = "/api/audio/status", .method = HTTP_GET, .handler = audio_status_handler, .user_ctx = NULL };
-        httpd_uri_t uri_audio_wave = { .uri = "/api/audio/wave", .method = HTTP_GET, .handler = audio_wave_handler, .user_ctx = NULL };
+        httpd_uri_t uri_audio_wave = { .uri = "/api/audio/waveform", .method = HTTP_GET, .handler = audio_waveform_handler, .user_ctx = NULL };
         httpd_uri_t uri_audio_say = { .uri = "/api/audio/say", .method = HTTP_POST, .handler = audio_say_handler, .user_ctx = NULL };
         httpd_uri_t uri_audio_tone = { .uri = "/api/audio/tone", .method = HTTP_POST, .handler = audio_tone_handler, .user_ctx = NULL };
         httpd_uri_t uri_audio_beep = { .uri = "/api/audio/beep", .method = HTTP_POST, .handler = audio_beep_handler, .user_ctx = NULL };

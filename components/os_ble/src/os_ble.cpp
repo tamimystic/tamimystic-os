@@ -140,14 +140,17 @@ static int ble_gap_event_cb(struct ble_gap_event *event, void *arg) {
         case BLE_GAP_EVENT_CONNECT:
             if (event->connect.status == 0) {
                 g_conn_handle = event->connect.conn_handle;
-                char addr_str[32];
-                snprintf(addr_str, sizeof(addr_str), "%02X:%02X:%02X:%02X:%02X:%02X",
-                         event->connect.conn_desc.peer_id_addr.val[5],
-                         event->connect.conn_desc.peer_id_addr.val[4],
-                         event->connect.conn_desc.peer_id_addr.val[3],
-                         event->connect.conn_desc.peer_id_addr.val[2],
-                         event->connect.conn_desc.peer_id_addr.val[1],
-                         event->connect.conn_desc.peer_id_addr.val[0]);
+                char addr_str[32] = "00:00:00:00:00:00";
+                struct ble_gap_conn_desc desc;
+                if (ble_gap_conn_find(event->connect.conn_handle, &desc) == 0) {
+                    snprintf(addr_str, sizeof(addr_str), "%02X:%02X:%02X:%02X:%02X:%02X",
+                             desc.peer_id_addr.val[5],
+                             desc.peer_id_addr.val[4],
+                             desc.peer_id_addr.val[3],
+                             desc.peer_id_addr.val[2],
+                             desc.peer_id_addr.val[1],
+                             desc.peer_id_addr.val[0]);
+                }
                 mgr.onClientConnect(addr_str);
             } else {
                 mgr.startAdvertising();
@@ -385,7 +388,7 @@ bool BleManager::notifyTelemetry(const BleTelemetryPacket& telemetry) {
 #if !defined(OS_TARGET_NATIVE) && defined(CONFIG_BT_NIMBLE_ENABLED)
     if (g_telemetry_handle != 0 && g_conn_handle != BLE_HS_CONN_HANDLE_NONE) {
         struct os_mbuf *om = ble_hs_mbuf_from_flat(&telemetry, sizeof(telemetry));
-        ble_gattc_notify_custom(g_conn_handle, g_telemetry_handle, om);
+        ble_gatts_notify_custom(g_conn_handle, g_telemetry_handle, om);
     }
 #else
     (void)telemetry;
@@ -400,7 +403,7 @@ bool BleManager::notifySensors(const BleSensorPacket& sensors) {
 #if !defined(OS_TARGET_NATIVE) && defined(CONFIG_BT_NIMBLE_ENABLED)
     if (g_sensors_handle != 0 && g_conn_handle != BLE_HS_CONN_HANDLE_NONE) {
         struct os_mbuf *om = ble_hs_mbuf_from_flat(&sensors, sizeof(sensors));
-        ble_gattc_notify_custom(g_conn_handle, g_sensors_handle, om);
+        ble_gatts_notify_custom(g_conn_handle, g_sensors_handle, om);
     }
 #else
     (void)sensors;
