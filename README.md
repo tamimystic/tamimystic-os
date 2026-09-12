@@ -80,12 +80,22 @@ The system features a **dual-target architecture**: it compiles directly to bare
 - Multi-robot Leader-Follower formation kinematics with automatic geometric coordinate offsets.
 - Handheld wireless controller bridge for low-latency remote teleoperation.
 
-### 8. MicroPython Sandboxed Engine & In-Browser Web IDE (`os_apps`, `os_web`)
+### 8. Bluetooth Low Energy (BLE 5.0) & Web Bluetooth (`os_ble`)
+- High-efficiency NimBLE GATT server with custom 128-bit Robotics Service UUID.
+- Exposes 20Hz real-time motion telemetry, 6-DOF arm control, and bidirectional joystick twist.
+- Zero-install pairing directly via Web Bluetooth API in Google Chrome and Microsoft Edge.
+
+### 9. Automated Testing & Subsystem Benchmarks (`tests/`, `os_cli`)
+- 13 comprehensive CTest component test suites with 100% pass verification on host and CI.
+- Serial CLI benchmark runner (`bench [all|ik|kinematics|slam]`) measuring microsecond latency and ops/sec throughput.
+- Integrated GitHub Actions automated workflow for continuous regression prevention.
+
+### 10. MicroPython Sandboxed Engine & In-Browser Web IDE (`os_apps`, `os_web`)
 - Embedded MicroPython runtime with 512 KB dedicated PSRAM heap.
-- Comprehensive `tamimystic` standard library (`system`, `pin`, `motion`, `arm`, `sensor`, `camera`, `ai`, `slam`, `espnow`, `audio`).
+- Comprehensive `tamimystic` standard library (`system`, `pin`, `motion`, `arm`, `sensor`, `camera`, `ai`, `slam`, `espnow`, `ble`, `audio`).
 - In-browser code editor with live WebSocket REPL console and 4.375 MB LittleFS VFS.
 
-### 9. Dual-Bank A/B OTA Firmware Updates (`os_ota`)
+### 11. Dual-Bank A/B OTA Firmware Updates (`os_ota`)
 - Symmetrical 4.5 MB application partitions (`ota_0` and `ota_1`) with automated bootloader rollback protection.
 - Web-based drag-and-drop firmware flashing and REST binary streaming.
 
