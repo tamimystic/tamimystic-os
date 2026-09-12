@@ -1,0 +1,2609 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="The Universal Edge Robotics & AI Operating System for ESP32-S3">
+      
+      
+        <meta name="author" content="Tamimystic">
+      
+      
+      
+        <link rel="prev" href="../../getting-started/quickstart/">
+      
+      
+        <link rel="next" href="../pnp-sensors/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Dynamic Software Pin Matrix - Tamimystic OS Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dynamic-software-pin-matrix" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Tamimystic OS Documentation" class="md-header__button md-logo" aria-label="Tamimystic OS Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Tamimystic OS Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Dynamic Software Pin Matrix
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tamimystic/tamimystic-os" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tamimystic/tamimystic-os
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Hardware & Pin Matrix
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../robotics/overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Robotics Control Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ai-vision/camera/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Edge AI & Vision
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../apps/micropython/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Python & Application Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/cli/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API & CLI Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../development/build/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Developer Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Future Roadmap
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Tamimystic OS Documentation" class="md-nav__button md-logo" aria-label="Tamimystic OS Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Tamimystic OS Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tamimystic/tamimystic-os" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tamimystic/tamimystic-os
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../getting-started/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flashing & Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/first-boot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First Boot & Web Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5-Minute Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware & Pin Matrix
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware & Pin Matrix
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamic Software Pin Matrix
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamic Software Pin Matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-theory-of-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Theory of Operation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architectural Theory of Operation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-remapping-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic Remapping Workflow:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#silicon-protection-octal-psram-safety-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Silicon Protection &amp; Octal PSRAM Safety Filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pin-function-enumeration-and-default-mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pin Function Enumeration and Default Mappings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-driver-programming-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C++ Driver Programming API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embedded-micropython-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedded MicroPython API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-cli-and-http-rest-api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial CLI and HTTP REST API Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Serial CLI and HTTP REST API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serial-cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial CLI Commands:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-rest-api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP REST API Endpoints:
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="HTTP REST API Endpoints:">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-retrieve-complete-pin-matrix-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Retrieve Complete Pin Matrix JSON
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-remap-pin-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Remap Pin Assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-reset-pin-matrix-to-defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Reset Pin Matrix to Defaults
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pnp-sensors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plug & Play Sensor Catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Robotics Control Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Robotics Control Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../robotics/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Universal Robot Brain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../robotics/kinematics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rover & Mecanum Kinematics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../robotics/arm-ik/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-DOF Arm & Inverse Kinematics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../robotics/ros2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ROS 2 and micro-ROS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../robotics/slam-nav/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D LiDAR and SLAM Navigation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../robotics/espnow-swarm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESP-NOW Mesh and Swarm Robotics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../robotics/ble-remote/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BLE 5.0 and Web Bluetooth Remote
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Edge AI & Vision
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Edge AI & Vision
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-vision/camera/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DVP Camera & PSRAM Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-vision/neural-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboard Neural Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-vision/visual-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Autonomous Visual Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-vision/voice-audio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Voice Control & Audio Edge AI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python & Application Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Python & Application Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apps/micropython/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MicroPython Runtime & APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apps/web-ide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Browser Web IDE & VFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apps/ota-updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dual-Bank OTA Firmware Update
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API & CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API & CLI Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial CLI Command Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/rest-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP REST API Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/build/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build from Source (PC & ESP32)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/cicd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD & GitHub Actions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/benchmarks-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automated Testing & Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-theory-of-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Theory of Operation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architectural Theory of Operation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-remapping-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic Remapping Workflow:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#silicon-protection-octal-psram-safety-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Silicon Protection &amp; Octal PSRAM Safety Filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pin-function-enumeration-and-default-mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pin Function Enumeration and Default Mappings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-driver-programming-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C++ Driver Programming API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embedded-micropython-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedded MicroPython API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-cli-and-http-rest-api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial CLI and HTTP REST API Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Serial CLI and HTTP REST API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serial-cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial CLI Commands:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-rest-api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP REST API Endpoints:
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="HTTP REST API Endpoints:">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-retrieve-complete-pin-matrix-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Retrieve Complete Pin Matrix JSON
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-remap-pin-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Remap Pin Assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-reset-pin-matrix-to-defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Reset Pin Matrix to Defaults
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dynamic-software-pin-matrix">Dynamic Software Pin Matrix</h1>
+<p>The <strong>Dynamic Software Pin Matrix</strong> is one of the core innovations of Tamimystic OS. In traditional embedded development, changing peripheral pinout requires modifying source code header macros (<code>#define MOTOR_PWM_PIN 5</code>), recompiling the binary, and re-flashing the microcontroller. </p>
+<p>Tamimystic OS decouples hardware drivers from physical pins by introducing an abstract software-defined multiplexer layer. Every peripheral function (I2C SDA/SCL, Motor PWM, Direction GPIOs, Quadrature Encoders, I2S Audio, Ultrasonic Triggers, Status LEDs) is bound to an abstract identifier that can be remapped dynamically at runtime via the Web Dashboard, REST API, CLI, or Python scripts without rebooting or recompiling.</p>
+<hr />
+<h2 id="architectural-theory-of-operation">Architectural Theory of Operation</h2>
+<p>The ESP32-S3 SoC contains a dual-layer pin routing subsystem:
+1. <strong>IO MUX</strong>: Connects dedicated high-speed peripherals directly to physical pad registers.
+2. <strong>GPIO Matrix</strong>: A 49-channel bidirectional routing matrix that routes any internal digital input or output signal to any physical GPIO pad.</p>
+<p>Tamimystic OS interfaces with the ESP32-S3 GPIO Matrix through the <code>PinMatrixManager</code> singleton.</p>
+<pre class="mermaid"><code>graph TD
+    subgraph UserInterface["Configuration Interfaces"]
+        WebUI["Web Dashboard UI (Card 2)"]
+        CLI["Serial Console (pin set/show)"]
+        REST["HTTP REST API (/api/pins/set)"]
+        PyScript["MicroPython (tamimystic.pin.set)"]
+    end
+
+    subgraph PinMatrixCore["Pin Matrix Subsystem (os_pnp)"]
+        MGR["PinMatrixManager (Singleton)"]
+        Safety["Hardware Safety &amp; PSRAM Protection Filter"]
+        NVS["Non-Volatile Storage (NVS Flash Namespace: 'pin_matrix')"]
+        Bus["Internal System Event Bus"]
+    end
+
+    subgraph Drivers["Hardware Peripheral Drivers"]
+        I2CDriver["I2C Master Controller (Driver Instance)"]
+        LEDC["LEDC PWM Motor &amp; Servo Drivers"]
+        Pcnt["PCNT Quadrature Encoder Drivers"]
+        I2SAudio["I2S DMA Audio Pipeline"]
+        GPIODriver["Direct GPIO Register Mappings"]
+    end
+
+    UserInterface --&gt; MGR
+    MGR --&gt; Safety
+    Safety --&gt;|Valid &amp; Safe| NVS
+    MGR --&gt;|Publish PIN_CONFIG_CHANGED| Bus
+    Bus --&gt; I2CDriver
+    Bus --&gt; LEDC
+    Bus --&gt; Pcnt
+    Bus --&gt; I2SAudio
+    Bus --&gt; GPIODriver</code></pre>
+<h3 id="dynamic-remapping-workflow">Dynamic Remapping Workflow:</h3>
+<ol>
+<li><strong>Request Submission</strong>: A configuration change request (e.g. <code>setPin("i2c_sda", 1)</code>) is received.</li>
+<li><strong>Safety Validation</strong>: The requested GPIO number is evaluated against the <code>isSafePin()</code> silicon protection bitmask.</li>
+<li><strong>Collision Detection</strong>: The manager verifies that no conflicting peripheral is currently assigned to the target GPIO.</li>
+<li><strong>NVS Persistence</strong>: The updated key-value pair is committed to non-volatile flash storage.</li>
+<li><strong>Event Bus Broadcast</strong>: The manager dispatches a <code>PIN_CONFIG_CHANGED</code> event payload.</li>
+<li><strong>Driver Re-initialization</strong>: The active driver deinitializes the previous GPIO pad and binds the new pad in hardware via <code>gpio_set_direction()</code>, <code>gpio_matrix_out()</code>, and <code>gpio_matrix_in()</code>.</li>
+</ol>
+<hr />
+<h2 id="silicon-protection-octal-psram-safety-filter">Silicon Protection &amp; Octal PSRAM Safety Filter</h2>
+<p>The ESP32-S3-N16R8 utilizes an ultra-high-speed 80 MHz Octal SPI bus for its 8 MB external PSRAM and Quad SPI bus for its 16 MB Flash memory. Re-assigning or toggling these physical pins will cause an instant hard fault and hardware freeze.</p>
+<p>Tamimystic OS enforces a hard-coded silicon safety filter. Any attempt to route peripherals to locked pins is rejected with error code <code>-1</code> (<code>PIN_SAFETY_VIOLATION</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Physical GPIO Range</th>
+<th>Status</th>
+<th>Silicon &amp; Hardware Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>GPIO 26, 27, 28, 29, 30, 31, 32</strong></td>
+<td><strong>LOCKED</strong></td>
+<td>Embedded Quad SPI Flash Bus (CS0, CLK, MOSI, MISO, WP, HOLD).</td>
+</tr>
+<tr>
+<td><strong>GPIO 33, 34, 35, 36, 37</strong></td>
+<td><strong>LOCKED</strong></td>
+<td>Embedded Octal SPI PSRAM Bus (D4, D5, D6, D7, DQS).</td>
+</tr>
+<tr>
+<td><strong>GPIO 19, 20</strong></td>
+<td><strong>RESERVED</strong></td>
+<td>Native USB-OTG and JTAG D+/D- Lines (used for console and flashing).</td>
+</tr>
+<tr>
+<td><strong>GPIO 45, 46</strong></td>
+<td><strong>STRAPPING</strong></td>
+<td>Boot Voltage and ROM Boot Strapping Pins (sampled on reset).</td>
+</tr>
+<tr>
+<td><strong>GPIO 0</strong></td>
+<td><strong>STRAPPING</strong></td>
+<td>Boot Mode Select (Active LOW download mode).</td>
+</tr>
+<tr>
+<td><strong>GPIO 1 to 18, 21, 38 to 44, 47, 48</strong></td>
+<td><strong>SAFE</strong></td>
+<td>Fully available for dynamic routing and peripheral assignment.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="pin-function-enumeration-and-default-mappings">Pin Function Enumeration and Default Mappings</h2>
+<p>The complete list of supported abstract pin functions, their internal string identifiers, default GPIO assignments, and hardware driver associations:</p>
+<table>
+<thead>
+<tr>
+<th>Pin Function Identifier</th>
+<th>String Key</th>
+<th>Default GPIO</th>
+<th>Driver Module</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>I2C_SDA</code></td>
+<td><code>i2c_sda</code></td>
+<td><strong>GPIO 21</strong></td>
+<td><code>os_pnp / I2C0</code></td>
+<td>I2C Serial Data Bus Master Line</td>
+</tr>
+<tr>
+<td><code>I2C_SCL</code></td>
+<td><code>i2c_scl</code></td>
+<td><strong>GPIO 22</strong></td>
+<td><code>os_pnp / I2C0</code></td>
+<td>I2C Serial Clock Bus Master Line</td>
+</tr>
+<tr>
+<td><code>MOTOR_L_IN1</code></td>
+<td><code>motor_l_in1</code></td>
+<td><strong>GPIO 4</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Left Motor H-Bridge Forward Direction</td>
+</tr>
+<tr>
+<td><code>MOTOR_L_IN2</code></td>
+<td><code>motor_l_in2</code></td>
+<td><strong>GPIO 5</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Left Motor H-Bridge Reverse Direction</td>
+</tr>
+<tr>
+<td><code>MOTOR_L_PWM</code></td>
+<td><code>motor_l_pwm</code></td>
+<td><strong>GPIO 6</strong></td>
+<td><code>os_motion / LEDC0</code></td>
+<td>Left Motor Speed PWM (10 kHz, 10-bit resolution)</td>
+</tr>
+<tr>
+<td><code>MOTOR_R_IN3</code></td>
+<td><code>motor_r_in3</code></td>
+<td><strong>GPIO 7</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Right Motor H-Bridge Forward Direction</td>
+</tr>
+<tr>
+<td><code>MOTOR_R_IN4</code></td>
+<td><code>motor_r_in4</code></td>
+<td><strong>GPIO 15</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Right Motor H-Bridge Reverse Direction</td>
+</tr>
+<tr>
+<td><code>MOTOR_R_PWM</code></td>
+<td><code>motor_r_pwm</code></td>
+<td><strong>GPIO 16</strong></td>
+<td><code>os_motion / LEDC1</code></td>
+<td>Right Motor Speed PWM (10 kHz, 10-bit resolution)</td>
+</tr>
+<tr>
+<td><code>MOTOR_FL_PWM</code></td>
+<td><code>motor_fl_pwm</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / LEDC0</code></td>
+<td>Front-Left Motor PWM (4WD Mecanum)</td>
+</tr>
+<tr>
+<td><code>MOTOR_FL_IN1</code></td>
+<td><code>motor_fl_in1</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Front-Left Motor Direction IN1</td>
+</tr>
+<tr>
+<td><code>MOTOR_FL_IN2</code></td>
+<td><code>motor_fl_in2</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Front-Left Motor Direction IN2</td>
+</tr>
+<tr>
+<td><code>MOTOR_FR_PWM</code></td>
+<td><code>motor_fr_pwm</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / LEDC1</code></td>
+<td>Front-Right Motor PWM (4WD Mecanum)</td>
+</tr>
+<tr>
+<td><code>MOTOR_FR_IN1</code></td>
+<td><code>motor_fr_in1</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Front-Right Motor Direction IN1</td>
+</tr>
+<tr>
+<td><code>MOTOR_FR_IN2</code></td>
+<td><code>motor_fr_in2</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Front-Right Motor Direction IN2</td>
+</tr>
+<tr>
+<td><code>MOTOR_RL_PWM</code></td>
+<td><code>motor_rl_pwm</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / LEDC2</code></td>
+<td>Rear-Left Motor PWM (4WD Mecanum)</td>
+</tr>
+<tr>
+<td><code>MOTOR_RL_IN1</code></td>
+<td><code>motor_rl_in1</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Rear-Left Motor Direction IN1</td>
+</tr>
+<tr>
+<td><code>MOTOR_RL_IN2</code></td>
+<td><code>motor_rl_in2</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Rear-Left Motor Direction IN2</td>
+</tr>
+<tr>
+<td><code>MOTOR_RR_PWM</code></td>
+<td><code>motor_rr_pwm</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / LEDC3</code></td>
+<td>Rear-Right Motor PWM (4WD Mecanum)</td>
+</tr>
+<tr>
+<td><code>MOTOR_RR_IN1</code></td>
+<td><code>motor_rr_in1</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Rear-Right Motor Direction IN1</td>
+</tr>
+<tr>
+<td><code>MOTOR_RR_IN2</code></td>
+<td><code>motor_rr_in2</code></td>
+<td><strong>Unassigned</strong></td>
+<td><code>os_motion / GPIO</code></td>
+<td>Rear-Right Motor Direction IN2</td>
+</tr>
+<tr>
+<td><code>SERVO_PWM</code></td>
+<td><code>servo_pwm</code></td>
+<td><strong>GPIO 8</strong></td>
+<td><code>os_motion / LEDC2</code></td>
+<td>Direct PWM RC Servo Control (50 Hz, 14-bit)</td>
+</tr>
+<tr>
+<td><code>ENCODER_L_A</code></td>
+<td><code>encoder_l_a</code></td>
+<td><strong>GPIO 9</strong></td>
+<td><code>os_motion / PCNT0</code></td>
+<td>Left Wheel Quadrature Encoder Phase A</td>
+</tr>
+<tr>
+<td><code>ENCODER_L_B</code></td>
+<td><code>encoder_l_b</code></td>
+<td><strong>GPIO 10</strong></td>
+<td><code>os_motion / PCNT0</code></td>
+<td>Left Wheel Quadrature Encoder Phase B</td>
+</tr>
+<tr>
+<td><code>ENCODER_R_A</code></td>
+<td><code>encoder_r_a</code></td>
+<td><strong>GPIO 11</strong></td>
+<td><code>os_motion / PCNT1</code></td>
+<td>Right Wheel Quadrature Encoder Phase A</td>
+</tr>
+<tr>
+<td><code>ENCODER_R_B</code></td>
+<td><code>encoder_r_b</code></td>
+<td><strong>GPIO 12</strong></td>
+<td><code>os_motion / PCNT1</code></td>
+<td>Right Wheel Quadrature Encoder Phase B</td>
+</tr>
+<tr>
+<td><code>ULTRASONIC_TRIG</code></td>
+<td><code>ultrasonic_trig</code></td>
+<td><strong>GPIO 13</strong></td>
+<td><code>os_sensors / RMT</code></td>
+<td>HC-SR04 Ultrasonic Sensor Trigger Pulse (10us)</td>
+</tr>
+<tr>
+<td><code>ULTRASONIC_ECHO</code></td>
+<td><code>ultrasonic_echo</code></td>
+<td><strong>GPIO 14</strong></td>
+<td><code>os_sensors / GPIO</code></td>
+<td>HC-SR04 Ultrasonic Sensor Echo Capture</td>
+</tr>
+<tr>
+<td><code>STATUS_LED</code></td>
+<td><code>status_led</code></td>
+<td><strong>GPIO 48</strong></td>
+<td><code>os_core / GPIO</code></td>
+<td>Built-in WS2812 RGB / Direct Digital Status LED</td>
+</tr>
+<tr>
+<td><code>BUZZER</code></td>
+<td><code>buzzer</code></td>
+<td><strong>GPIO 38</strong></td>
+<td><code>os_audio / LEDC3</code></td>
+<td>Piezo Alert Buzzer PWM Generator</td>
+</tr>
+<tr>
+<td><code>I2S_BCLK</code></td>
+<td><code>i2s_bclk</code></td>
+<td><strong>GPIO 41</strong></td>
+<td><code>os_audio / I2S0</code></td>
+<td>I2S Audio Bit Clock Line</td>
+</tr>
+<tr>
+<td><code>I2S_WS</code></td>
+<td><code>i2s_ws</code></td>
+<td><strong>GPIO 42</strong></td>
+<td><code>os_audio / I2S0</code></td>
+<td>I2S Audio Word Select (LRCLK) Line</td>
+</tr>
+<tr>
+<td><code>I2S_DIN</code></td>
+<td><code>i2s_din</code></td>
+<td><strong>GPIO 39</strong></td>
+<td><code>os_audio / I2S0</code></td>
+<td>I2S Microphone Data Input (INMP441)</td>
+</tr>
+<tr>
+<td><code>I2S_DOUT</code></td>
+<td><code>i2s_dout</code></td>
+<td><strong>GPIO 40</strong></td>
+<td><code>os_audio / I2S0</code></td>
+<td>I2S DAC Speaker Data Output (MAX98357A)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="c-driver-programming-api">C++ Driver Programming API</h2>
+<p>The <code>PinMatrixManager</code> is accessible anywhere within the kernel:</p>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"os_pin_matrix.h"</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">TamimysticOS</span><span class="p">;</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kt">void</span><span class="w"> </span><span class="nf">configure_custom_hardware</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pin_mgr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PinMatrixManager</span><span class="o">::</span><span class="n">getInstance</span><span class="p">();</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="c1">// Query active GPIO for I2C SDA</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">current_sda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pin_mgr</span><span class="p">.</span><span class="n">getPin</span><span class="p">(</span><span class="n">PinFunction</span><span class="o">::</span><span class="n">I2C_SDA</span><span class="p">);</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"Current I2C SDA Pin: GPIO %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="n">current_sda</span><span class="p">);</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="c1">// Validate if GPIO 1 is safe for routing</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pin_mgr</span><span class="p">.</span><span class="n">isSafePin</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="c1">// Re-assign I2C SDA to GPIO 1 and persist to NVS</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">success</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pin_mgr</span><span class="p">.</span><span class="n">setPin</span><span class="p">(</span><span class="n">PinFunction</span><span class="o">::</span><span class="n">I2C_SDA</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">success</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">"I2C SDA successfully remapped to GPIO 1</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">    </span><span class="c1">// Retrieve all active mappings</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">PinMappingItem</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mappings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pin_mgr</span><span class="p">.</span><span class="n">getAllMappings</span><span class="p">();</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">item</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">mappings</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">"Func: %-15s -&gt; GPIO %2d (Safe: %s)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">               </span><span class="n">item</span><span class="p">.</span><span class="n">func_name</span><span class="p">.</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">gpio_pin</span><span class="p">,</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">is_safe</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">"YES"</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">"NO"</span><span class="p">);</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="p">}</span>
+</span></code></pre></div>
+<hr />
+<h2 id="embedded-micropython-api">Embedded MicroPython API</h2>
+<p>Control and query pin matrix configurations directly from Python scripts:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">tamimystic</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Query current pin configuration</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">sda_pin</span> <span class="o">=</span> <span class="n">tamimystic</span><span class="o">.</span><span class="n">pin</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"i2c_sda"</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"I2C SDA is on GPIO:"</span><span class="p">,</span> <span class="n">sda_pin</span><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Remap Left Motor PWM to GPIO 8</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">if</span> <span class="n">tamimystic</span><span class="o">.</span><span class="n">pin</span><span class="o">.</span><span class="n">is_safe</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">success</span> <span class="o">=</span> <span class="n">tamimystic</span><span class="o">.</span><span class="n">pin</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">"motor_l_pwm"</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"Remap status:"</span><span class="p">,</span> <span class="n">success</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1"># Read digital state of a pin</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">state</span> <span class="o">=</span> <span class="n">tamimystic</span><span class="o">.</span><span class="n">pin</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1"># Write digital state to a pin</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">tamimystic</span><span class="o">.</span><span class="n">pin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1"># Reset pin matrix to factory defaults</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">tamimystic</span><span class="o">.</span><span class="n">pin</span><span class="o">.</span><span class="n">reset_defaults</span><span class="p">()</span>
+</span></code></pre></div>
+<hr />
+<h2 id="serial-cli-and-http-rest-api-reference">Serial CLI and HTTP REST API Reference</h2>
+<h3 id="serial-cli-commands">Serial CLI Commands:</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Display full pin matrix table with safety status</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>tamimystic&gt;<span class="w"> </span>pin<span class="w"> </span>show
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Output:</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># +-----------------+-----------+--------+-------------------------------+</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># | Function        | String ID | GPIO   | Status                        |</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># +-----------------+-----------+--------+-------------------------------+</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># | I2C SDA         | i2c_sda   | 21     | SAFE [ACTIVE]                 |</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># | I2C SCL         | i2c_scl   | 22     | SAFE [ACTIVE]                 |</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># | Motor Left PWM  | motor_l_pwm| 6     | SAFE [ACTIVE]                 |</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># | Status LED      | status_led| 48     | SAFE [ACTIVE]                 |</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># +-----------------+-----------+--------+-------------------------------+</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># Remap I2C SDA to GPIO 1</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>tamimystic&gt;<span class="w"> </span>pin<span class="w"> </span><span class="nb">set</span><span class="w"> </span>i2c_sda<span class="w"> </span><span class="m">1</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="o">[</span>PIN<span class="o">]</span><span class="w"> </span>Function<span class="w"> </span><span class="s1">'i2c_sda'</span><span class="w"> </span>mapped<span class="w"> </span>to<span class="w"> </span>GPIO<span class="w"> </span><span class="m">1</span>.<span class="w"> </span>Driver<span class="w"> </span>reloaded.
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># Attempt to assign to a locked PSRAM pin</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>tamimystic&gt;<span class="w"> </span>pin<span class="w"> </span><span class="nb">set</span><span class="w"> </span>motor_l_pwm<span class="w"> </span><span class="m">35</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="o">[</span>ERROR<span class="o">]</span><span class="w"> </span>GPIO<span class="w"> </span><span class="m">35</span><span class="w"> </span>is<span class="w"> </span>LOCKED<span class="w"> </span><span class="o">(</span>Octal<span class="w"> </span>PSRAM<span class="w"> </span>Bus<span class="o">)</span>.<span class="w"> </span>Assignment<span class="w"> </span>rejected!
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="c1"># Reset all pins to factory default configuration</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>tamimystic&gt;<span class="w"> </span>pin<span class="w"> </span>reset
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="o">[</span>PIN<span class="o">]</span><span class="w"> </span>Pin<span class="w"> </span>matrix<span class="w"> </span>restored<span class="w"> </span>to<span class="w"> </span>factory<span class="w"> </span>defaults.
+</span></code></pre></div>
+<h3 id="http-rest-api-endpoints">HTTP REST API Endpoints:</h3>
+<h4 id="1-retrieve-complete-pin-matrix-json">1. Retrieve Complete Pin Matrix JSON</h4>
+<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>GET<span class="w"> </span>/api/pins
+</span></code></pre></div>
+<strong>Response JSON:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"pins"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="p">{</span><span class="nt">"function"</span><span class="p">:</span><span class="w"> </span><span class="s2">"i2c_sda"</span><span class="p">,</span><span class="w"> </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">"I2C SDA"</span><span class="p">,</span><span class="w"> </span><span class="nt">"gpio"</span><span class="p">:</span><span class="w"> </span><span class="mi">21</span><span class="p">,</span><span class="w"> </span><span class="nt">"safe"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"desc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"I2C Master Data Line"</span><span class="p">},</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">{</span><span class="nt">"function"</span><span class="p">:</span><span class="w"> </span><span class="s2">"i2c_scl"</span><span class="p">,</span><span class="w"> </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">"I2C SCL"</span><span class="p">,</span><span class="w"> </span><span class="nt">"gpio"</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span><span class="w"> </span><span class="nt">"safe"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"desc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"I2C Master Clock Line"</span><span class="p">},</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p">{</span><span class="nt">"function"</span><span class="p">:</span><span class="w"> </span><span class="s2">"motor_l_pwm"</span><span class="p">,</span><span class="w"> </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Motor Left PWM"</span><span class="p">,</span><span class="w"> </span><span class="nt">"gpio"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="nt">"safe"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"desc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Left Motor Speed PWM"</span><span class="p">},</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">{</span><span class="nt">"function"</span><span class="p">:</span><span class="w"> </span><span class="s2">"status_led"</span><span class="p">,</span><span class="w"> </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Status LED"</span><span class="p">,</span><span class="w"> </span><span class="nt">"gpio"</span><span class="p">:</span><span class="w"> </span><span class="mi">48</span><span class="p">,</span><span class="w"> </span><span class="nt">"safe"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"desc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RGB Status LED"</span><span class="p">}</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="p">]</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h4 id="2-remap-pin-assignment">2. Remap Pin Assignment</h4>
+<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>POST<span class="w"> </span>/api/pins/set?func<span class="o">=</span>motor_l_pwm<span class="p">&amp;</span><span class="nv">pin</span><span class="o">=</span><span class="m">8</span>
+</span></code></pre></div>
+<strong>Response JSON:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ok"</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">"func"</span><span class="p">:</span><span class="w"> </span><span class="s2">"motor_l_pwm"</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"gpio"</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="nt">"persisted_to_nvs"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h4 id="3-reset-pin-matrix-to-defaults">3. Reset Pin Matrix to Defaults</h4>
+<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>POST<span class="w"> </span>/api/pins/reset
+</span></code></pre></div>
+<strong>Response JSON:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ok"</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Pin matrix reset to factory defaults"</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="p">}</span>
+</span></code></pre></div></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
