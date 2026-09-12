@@ -10,6 +10,7 @@
 #include "os_ros2.h"
 #include "os_slam.h"
 #include "os_audio.h"
+#include "os_espnow.h"
 #include "dashboard_html.h"
 #include "esp_http_server.h"
 #include <string>
@@ -498,13 +499,92 @@ static esp_err_t audio_vol_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+static esp_err_t espnow_status_handler(httpd_req_t *req) {
+    std::string json = EspNowEngine::getInstance().getStatusJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t espnow_peers_handler(httpd_req_t *req) {
+    std::string json = EspNowEngine::getInstance().getPeersJson();
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json.c_str(), json.length());
+    return ESP_OK;
+}
+
+static esp_err_t espnow_swarm_handler(httpd_req_t *req) {
+    char query[96];
+    char role_str[16] = {0};
+    char form_str[16] = {0};
+    char slot_str[8] = "0";
+    char sp_str[16] = "60.0";
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "role", role_str, sizeof(role_str));
+        httpd_query_key_value(query, "formation", form_str, sizeof(form_str));
+        httpd_query_key_value(query, "slot", slot_str, sizeof(slot_str));
+        httpd_query_key_value(query, "spacing", sp_str, sizeof(sp_str));
+    }
+    uint8_t slot = (uint8_t)std::atoi(slot_str);
+    float spacing = (float)std::atof(sp_str);
+
+    if (role_str[0]) {
+        SwarmRole role = SwarmRole::STANDALONE;
+        if (std::strcmp(role_str, "leader") == 0) role = SwarmRole::LEADER;
+        else if (std::strcmp(role_str, "follower") == 0) role = SwarmRole::FOLLOWER;
+        EspNowEngine::getInstance().setSwarmRole(role, slot, spacing);
+    }
+    if (form_str[0]) {
+        SwarmFormation f = SwarmFormation::TRIANGLE;
+        if (std::strcmp(form_str, "line") == 0) f = SwarmFormation::LINE;
+        else if (std::strcmp(form_str, "column") == 0) f = SwarmFormation::COLUMN;
+        else if (std::strcmp(form_str, "diamond") == 0) f = SwarmFormation::DIAMOND;
+        EspNowEngine::getInstance().setFormation(f, spacing);
+    }
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t espnow_remote_handler(httpd_req_t *req) {
+    char query[32];
+    char en_str[8] = "1";
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "enable", en_str, sizeof(en_str));
+    }
+    bool en = (en_str[0] == '1' || en_str[0] == 't');
+    EspNowEngine::getInstance().setRemoteControlEnabled(en);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"ok\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t espnow_send_handler(httpd_req_t *req) {
+    char query[128];
+    char mac_str[24] = {0};
+    char msg_str[64] = {0};
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "mac", mac_str, sizeof(mac_str));
+        httpd_query_key_value(query, "msg", msg_str, sizeof(msg_str));
+    }
+    if (mac_str[0] && msg_str[0]) {
+        bool ok = EspNowEngine::getInstance().sendCustomPayload(mac_str, msg_str);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, ok ? "{\"status\":\"ok\"}" : "{\"status\":\"error\"}", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"status\":\"error\",\"message\":\"Missing mac or msg\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 void WebServer::start() {
     if (is_running) return;
     
     hal_uart_print("[WEB] Starting ESP32 HTTP Server on Port 80...\n");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 60;
+    config.max_uri_handlers = 70;
     
     if (httpd_start(&server, &config) == ESP_OK) {
         httpd_uri_t uri_dash = { .uri = "/", .method = HTTP_GET, .handler = dashboard_get_handler, .user_ctx = NULL };
@@ -551,6 +631,12 @@ void WebServer::start() {
         httpd_uri_t uri_audio_cmd = { .uri = "/api/audio/cmd", .method = HTTP_POST, .handler = audio_cmd_handler, .user_ctx = NULL };
         httpd_uri_t uri_audio_vol = { .uri = "/api/audio/volume", .method = HTTP_POST, .handler = audio_vol_handler, .user_ctx = NULL };
 
+        httpd_uri_t uri_espnow_status = { .uri = "/api/espnow/status", .method = HTTP_GET, .handler = espnow_status_handler, .user_ctx = NULL };
+        httpd_uri_t uri_espnow_peers = { .uri = "/api/espnow/peers", .method = HTTP_GET, .handler = espnow_peers_handler, .user_ctx = NULL };
+        httpd_uri_t uri_espnow_swarm = { .uri = "/api/espnow/swarm", .method = HTTP_POST, .handler = espnow_swarm_handler, .user_ctx = NULL };
+        httpd_uri_t uri_espnow_remote = { .uri = "/api/espnow/remote", .method = HTTP_POST, .handler = espnow_remote_handler, .user_ctx = NULL };
+        httpd_uri_t uri_espnow_send = { .uri = "/api/espnow/send", .method = HTTP_POST, .handler = espnow_send_handler, .user_ctx = NULL };
+
         httpd_register_uri_handler(server, &uri_dash);
         httpd_register_uri_handler(server, &uri_pnp_dev);
         httpd_register_uri_handler(server, &uri_pnp_scan);
@@ -588,8 +674,13 @@ void WebServer::start() {
         httpd_register_uri_handler(server, &uri_audio_kws);
         httpd_register_uri_handler(server, &uri_audio_cmd);
         httpd_register_uri_handler(server, &uri_audio_vol);
+        httpd_register_uri_handler(server, &uri_espnow_status);
+        httpd_register_uri_handler(server, &uri_espnow_peers);
+        httpd_register_uri_handler(server, &uri_espnow_swarm);
+        httpd_register_uri_handler(server, &uri_espnow_remote);
+        httpd_register_uri_handler(server, &uri_espnow_send);
 
-        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2, SLAM & Audio endpoints active.\n");
+        hal_uart_print("[WEB] Universal Robotics, Edge AI, Python IDE, ROS2, SLAM, Audio & ESP-NOW endpoints active.\n");
         is_running = true;
     } else {
         hal_uart_print("[WEB] Failed to start HTTP Server!\n");

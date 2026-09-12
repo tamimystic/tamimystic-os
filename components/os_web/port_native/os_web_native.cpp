@@ -10,6 +10,7 @@
 #include "os_ros2.h"
 #include "os_slam.h"
 #include "os_audio.h"
+#include "os_espnow.h"
 #include <thread>
 #include <atomic>
 #include "httplib.h"
@@ -438,6 +439,70 @@ void WebServer::start() {
         };
         svr->Post("/api/audio/volume", handle_audio_vol);
         svr->Get("/api/audio/volume", handle_audio_vol);
+
+        // ================= ESP-NOW & Swarm Mesh API =================
+        // 1. ESP-NOW Status & Telemetry
+        svr->Get("/api/espnow/status", [](const httplib::Request& req, httplib::Response& res) {
+            std::string json = EspNowEngine::getInstance().getStatusJson();
+            res.set_content(json, "application/json");
+        });
+
+        // 2. Swarm Peers List
+        svr->Get("/api/espnow/peers", [](const httplib::Request& req, httplib::Response& res) {
+            std::string json = EspNowEngine::getInstance().getPeersJson();
+            res.set_content(json, "application/json");
+        });
+
+        // 3. Swarm Role & Formation Configuration
+        auto handle_espnow_swarm = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("role")) {
+                std::string r_str = req.get_param_value("role");
+                uint8_t slot = req.has_param("slot") ? (uint8_t)std::atoi(req.get_param_value("slot").c_str()) : 0;
+                float sp = req.has_param("spacing") ? (float)std::atof(req.get_param_value("spacing").c_str()) : 60.0f;
+                SwarmRole role = SwarmRole::STANDALONE;
+                if (r_str == "leader") role = SwarmRole::LEADER;
+                else if (r_str == "follower") role = SwarmRole::FOLLOWER;
+                EspNowEngine::getInstance().setSwarmRole(role, slot, sp);
+            }
+            if (req.has_param("formation")) {
+                std::string f_str = req.get_param_value("formation");
+                float sp = req.has_param("spacing") ? (float)std::atof(req.get_param_value("spacing").c_str()) : 60.0f;
+                SwarmFormation f = SwarmFormation::TRIANGLE;
+                if (f_str == "line") f = SwarmFormation::LINE;
+                else if (f_str == "column") f = SwarmFormation::COLUMN;
+                else if (f_str == "diamond") f = SwarmFormation::DIAMOND;
+                EspNowEngine::getInstance().setFormation(f, sp);
+            }
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/espnow/swarm", handle_espnow_swarm);
+        svr->Get("/api/espnow/swarm", handle_espnow_swarm);
+
+        // 4. Remote Gamepad Control Toggle
+        auto handle_espnow_remote = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("enable")) {
+                std::string val = req.get_param_value("enable");
+                bool en = (val == "1" || val == "true" || val == "on");
+                EspNowEngine::getInstance().setRemoteControlEnabled(en);
+            }
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+        };
+        svr->Post("/api/espnow/remote", handle_espnow_remote);
+        svr->Get("/api/espnow/remote", handle_espnow_remote);
+
+        // 5. Send Custom ESP-NOW Packet
+        auto handle_espnow_send = [](const httplib::Request& req, httplib::Response& res) {
+            if (req.has_param("mac") && req.has_param("msg")) {
+                std::string target_mac = req.get_param_value("mac");
+                std::string msg = req.get_param_value("msg");
+                bool ok = EspNowEngine::getInstance().sendCustomPayload(target_mac, msg);
+                res.set_content(ok ? "{\"status\":\"ok\"}" : "{\"status\":\"error\"}", "application/json");
+            } else {
+                res.set_content("{\"status\":\"error\",\"message\":\"Missing mac or msg\"}", "application/json");
+            }
+        };
+        svr->Post("/api/espnow/send", handle_espnow_send);
+        svr->Get("/api/espnow/send", handle_espnow_send);
 
         // API for File Upload (OTA / Models / Apps)
         svr->Post("/api/upload", [](const httplib::Request& req, httplib::Response& res) {

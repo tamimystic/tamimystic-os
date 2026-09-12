@@ -77,6 +77,7 @@ nav:
     - 6-DOF Arm & Inverse Kinematics: robotics/arm-ik.md
     - ROS 2 and micro-ROS: robotics/ros2.md
     - 2D LiDAR and SLAM Navigation: robotics/slam-nav.md
+    - ESP-NOW Mesh and Swarm Robotics: robotics/espnow-swarm.md
   - Edge AI & Vision:
     - DVP Camera & PSRAM Streaming: ai-vision/camera.md
     - Onboard Neural Models: ai-vision/neural-models.md

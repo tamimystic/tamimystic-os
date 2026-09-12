@@ -11,6 +11,7 @@
 #include "os_ros2.h"
 #include "os_slam.h"
 #include "os_audio.h"
+#include "os_espnow.h"
 
 #include <iostream>
 #include <sstream>
@@ -539,6 +540,62 @@ void CLI::init() {
             hal_uart_print(("[AUDIO] Volume set to " + std::to_string(vol) + "%\n").c_str());
         } else {
             hal_uart_print("Unknown audio subcommand.\n");
+        }
+    });
+
+    // ESP-NOW Mesh Swarm & Gamepad Remote commands
+    registerCommand("espnow", "ESP-NOW Mesh Swarm & Remote (espnow status, espnow peers, espnow swarm <leader|follower|off>, espnow remote <on|off>, espnow send <mac> <msg>)", [](const std::vector<std::string>& args) {
+        if (args.size() < 2 || args[1] == "status") {
+            auto st = EspNowEngine::getInstance().getStatus();
+            std::stringstream ss;
+            ss << "\n=== ESP-NOW 2.4GHz Radio & Swarm Mesh Status ===\n"
+               << "  MAC Address      : " << st.own_mac_str << "\n"
+               << "  Wi-Fi Channel    : " << (int)st.wifi_channel << "\n"
+               << "  Swarm Role       : " << swarmRoleToString(st.swarm_role) << "\n"
+               << "  Formation        : " << swarmFormationToString(st.formation) << "\n"
+               << "  Follower Slot    : " << (int)st.follower_slot << "\n"
+               << "  Formation Spacing: " << st.swarm_spacing_cm << " cm\n"
+               << "  Remote Control   : " << (st.remote_control_active ? "ACTIVE (Listening)" : "INACTIVE") << "\n"
+               << "  Packets Sent     : " << st.packets_sent << "\n"
+               << "  Packets Received : " << st.packets_received << "\n"
+               << "  Average Latency  : " << st.avg_latency_ms << " ms\n"
+               << "  Active Peers     : " << st.active_peer_count << "\n\n";
+            hal_uart_print(ss.str().c_str());
+        } else if (args[1] == "peers") {
+            auto peers = EspNowEngine::getInstance().getPeers();
+            std::stringstream ss;
+            ss << "\n=== Active ESP-NOW Mesh Peers (" << peers.size() << ") ===\n";
+            for (size_t i = 0; i < peers.size(); i++) {
+                ss << "  [" << i << "] MAC: " << peers[i].mac_str 
+                   << " | RSSI: " << (int)peers[i].rssi << " dBm"
+                   << " | Role: " << swarmRoleToString(peers[i].role)
+                   << " | Robot ID: " << (int)peers[i].robot_id
+                   << " | Pose: (" << peers[i].last_x_cm << ", " << peers[i].last_y_cm << " cm)\n";
+            }
+            ss << "\n";
+            hal_uart_print(ss.str().c_str());
+        } else if (args[1] == "swarm" && args.size() >= 3) {
+            std::string sub = args[2];
+            uint8_t slot = (args.size() >= 4) ? (uint8_t)std::atoi(args[3].c_str()) : 0;
+            float spacing = (args.size() >= 5) ? (float)std::atof(args[4].c_str()) : 60.0f;
+            if (sub == "leader") {
+                EspNowEngine::getInstance().setSwarmRole(SwarmRole::LEADER, 0, spacing);
+            } else if (sub == "follower") {
+                EspNowEngine::getInstance().setSwarmRole(SwarmRole::FOLLOWER, slot, spacing);
+            } else {
+                EspNowEngine::getInstance().setSwarmRole(SwarmRole::STANDALONE, 0, spacing);
+            }
+        } else if (args[1] == "remote" && args.size() >= 3) {
+            bool en = (args[2] == "on" || args[2] == "1" || args[2] == "enable");
+            EspNowEngine::getInstance().setRemoteControlEnabled(en);
+        } else if (args[1] == "send" && args.size() >= 4) {
+            std::string dest_mac = args[2];
+            std::string msg = "";
+            for (size_t i = 3; i < args.size(); i++) msg += args[i] + (i + 1 < args.size() ? " " : "");
+            bool ok = EspNowEngine::getInstance().sendCustomPayload(dest_mac, msg);
+            hal_uart_print((ok ? "Packet transmitted via ESP-NOW.\n" : "Failed to transmit packet.\n"));
+        } else {
+            hal_uart_print("Unknown espnow subcommand. Usage: espnow [status|peers|swarm <leader|follower|off>|remote <on|off>|send <mac> <msg>]\n");
         }
     });
 

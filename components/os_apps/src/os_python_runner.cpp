@@ -8,6 +8,7 @@
 #include "os_ros2.h"
 #include "os_slam.h"
 #include "os_audio.h"
+#include "os_espnow.h"
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
@@ -240,6 +241,53 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         int vol = std::atoi(line.substr(24, line.length() - 25).c_str());
         AudioEngine::getInstance().setVolume((uint8_t)vol);
         stdout_stream += "[AUDIO] Volume set to " + std::to_string(vol) + "%\n";
+        return;
+    }
+
+    // 18. tamimystic.espnow.swarm("role", slot, spacing)
+    if (line.rfind("tamimystic.espnow.swarm(", 0) == 0 && line.back() == ')') {
+        std::string args = line.substr(24, line.length() - 25);
+        std::stringstream ss(args);
+        std::string r_s, slot_s, sp_s;
+        if (std::getline(ss, r_s, ',')) {
+            if (!r_s.empty() && (r_s.front() == '"' || r_s.front() == '\'')) r_s = r_s.substr(1, r_s.length() - 2);
+            uint8_t slot = 0;
+            float spacing = 60.0f;
+            if (std::getline(ss, slot_s, ',')) slot = (uint8_t)std::atoi(trim(slot_s).c_str());
+            if (std::getline(ss, sp_s, ',')) spacing = (float)std::atof(trim(sp_s).c_str());
+
+            SwarmRole role = SwarmRole::STANDALONE;
+            if (r_s == "leader") role = SwarmRole::LEADER;
+            else if (r_s == "follower") role = SwarmRole::FOLLOWER;
+
+            EspNowEngine::getInstance().setSwarmRole(role, slot, spacing);
+            stdout_stream += "[ESPNOW:SWARM] Role set to " + r_s + " (Slot " + std::to_string(slot) + ")\n";
+        }
+        return;
+    }
+
+    // 19. tamimystic.espnow.remote(True/False)
+    if (line.rfind("tamimystic.espnow.remote(", 0) == 0 && line.back() == ')') {
+        std::string en_str = line.substr(25, line.length() - 26);
+        bool en = (en_str == "True" || en_str == "true" || en_str == "1");
+        EspNowEngine::getInstance().setRemoteControlEnabled(en);
+        stdout_stream += std::string("[ESPNOW:REMOTE] Gamepad listening ") + (en ? "ENABLED\n" : "DISABLED\n");
+        return;
+    }
+
+    // 20. tamimystic.espnow.send("MAC", "MSG")
+    if (line.rfind("tamimystic.espnow.send(", 0) == 0 && line.back() == ')') {
+        std::string args = line.substr(23, line.length() - 24);
+        std::stringstream ss(args);
+        std::string mac_s, msg_s;
+        if (std::getline(ss, mac_s, ',') && std::getline(ss, msg_s, ',')) {
+            mac_s = trim(mac_s);
+            msg_s = trim(msg_s);
+            if (!mac_s.empty() && (mac_s.front() == '"' || mac_s.front() == '\'')) mac_s = mac_s.substr(1, mac_s.length() - 2);
+            if (!msg_s.empty() && (msg_s.front() == '"' || msg_s.front() == '\'')) msg_s = msg_s.substr(1, msg_s.length() - 2);
+            EspNowEngine::getInstance().sendCustomPayload(mac_s, msg_s);
+            stdout_stream += "[ESPNOW:TX] Sent to " + mac_s + ": " + msg_s + "\n";
+        }
         return;
     }
 }

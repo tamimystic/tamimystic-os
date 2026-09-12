@@ -462,7 +462,66 @@ print("Finished.")</textarea>
         </div>
     </div>
 
-    <!-- Card 10: Live Event Logs (Full Width) -->
+    <!-- Card 10: ESP-NOW 2.4GHz Swarm Mesh & Wireless Remote Controller -->
+    <div class="card">
+        <div class="card-header">
+            <h2>⚡ ESP-NOW Swarm Mesh & Remote</h2>
+            <span class="brand-chip" id="espnow-role-pill" style="color:var(--primary); border-color:var(--primary);">STANDALONE</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; gap:8px;">
+                <div style="flex:2; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:11px; color:var(--text-muted);">Swarm Role & Slot</span>
+                    <select class="ai-select" id="espnow-role-select">
+                        <option value="standalone">Standalone Robot</option>
+                        <option value="leader">Swarm Leader (Broadcast 10Hz)</option>
+                        <option value="follower_1">Follower Slot 1 (Left Wing)</option>
+                        <option value="follower_2">Follower Slot 2 (Right Wing)</option>
+                        <option value="follower_3">Follower Slot 3 (Rear Guard)</option>
+                    </select>
+                </div>
+                <div style="flex:2; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:11px; color:var(--text-muted);">Formation Pattern</span>
+                    <select class="ai-select" id="espnow-form-select">
+                        <option value="triangle">Triangle (V-Shape)</option>
+                        <option value="line">Line (Trail Behind)</option>
+                        <option value="column">Column (Side-by-Side)</option>
+                        <option value="diamond">Diamond Guard</option>
+                    </select>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:11px; color:var(--text-muted);">Spacing</span>
+                    <input type="number" id="espnow-spacing-input" class="ik-input" value="60" style="padding:6px 8px;">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <button class="btn-action" id="btn-espnow-apply" style="flex:1; background:var(--primary); color:#082f49; justify-content:center;">Apply Swarm Config</button>
+                <button class="btn-action" id="btn-espnow-remote-toggle" style="flex:1; background:#334155; color:#fff; justify-content:center;">🎮 Gamepad Remote: OFF</button>
+            </div>
+
+            <!-- Active Peers Table -->
+            <div style="background:rgba(15, 23, 42, 0.6); border-radius:10px; padding:10px; border:1px solid var(--border); display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:11px; font-weight:bold; color:var(--text-muted);">Active Mesh Peers & Swarm Robots:</span>
+                <div id="espnow-peers-list" style="display:flex; flex-direction:column; gap:4px; max-height:90px; overflow-y:auto; font-size:11px;">
+                    <div style="color:var(--text-muted); text-align:center;">Scanning 2.4GHz ESP-NOW peers...</div>
+                </div>
+            </div>
+
+            <div class="hud-panel">
+                <div class="hud-row">
+                    <span>ESP-NOW MAC & RF Latency</span>
+                    <span class="hud-val" id="espnow-mac-val">24:DC:C3:98:45:A0 | 2.1 ms</span>
+                </div>
+                <div class="hud-row">
+                    <span>Mesh Packets (TX / RX / Loss)</span>
+                    <span class="hud-val" id="espnow-packets-val">0 / 0 (0.0% loss)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 11: Live Event Logs (Full Width) -->
     <div class="card" style="grid-column: 1 / -1;">
         <div class="card-header">
             <h2>📜 Real-Time System Event Logs</h2>
@@ -1174,17 +1233,95 @@ print("Pick complete!")`;
         }
     });
 
+    // ESP-NOW & Swarm Mesh JavaScript Logic
+    let espnowRemoteEnabled = false;
+
+    function fetchEspNowData() {
+        fetch('/api/espnow/status')
+            .then(res => res.json())
+            .then(data => {
+                const pill = document.getElementById('espnow-role-pill');
+                pill.innerText = data.swarm_role;
+                if (data.swarm_role === 'LEADER') {
+                    pill.style.color = "var(--success)";
+                    pill.style.borderColor = "var(--success)";
+                } else if (data.swarm_role === 'FOLLOWER') {
+                    pill.style.color = "var(--accent)";
+                    pill.style.borderColor = "var(--accent)";
+                } else {
+                    pill.style.color = "var(--primary)";
+                    pill.style.borderColor = "var(--primary)";
+                }
+
+                espnowRemoteEnabled = data.remote_active;
+                const rBtn = document.getElementById('btn-espnow-remote-toggle');
+                rBtn.innerText = `🎮 Gamepad Remote: ${data.remote_active ? "ON" : "OFF"}`;
+                rBtn.style.background = data.remote_active ? "var(--success)" : "#334155";
+                rBtn.style.color = data.remote_active ? "#022c22" : "#fff";
+
+                document.getElementById('espnow-mac-val').innerText = `${data.mac} | ${data.avg_latency_ms.toFixed(1)} ms`;
+                document.getElementById('espnow-packets-val').innerText = `${data.packets_tx} / ${data.packets_rx} (${data.packet_loss_pct.toFixed(1)}% loss)`;
+            })
+            .catch(() => {});
+
+        fetch('/api/espnow/peers')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('espnow-peers-list');
+                if (data.peers && data.peers.length > 0) {
+                    list.innerHTML = data.peers.map(p => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px;">
+                            <span style="font-family:monospace; color:var(--primary); font-weight:bold;">${p.mac}</span>
+                            <span style="color:var(--text-muted);">${p.role} (#${p.robot_id})</span>
+                            <span style="color:var(--success); font-weight:bold;">${p.rssi} dBm</span>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div style="color:var(--text-muted); text-align:center;">No other active mesh peers in range.</div>';
+                }
+            })
+            .catch(() => {});
+    }
+
+    document.getElementById('btn-espnow-apply').addEventListener('click', () => {
+        const selRole = document.getElementById('espnow-role-select').value;
+        const selForm = document.getElementById('espnow-form-select').value;
+        const spacing = document.getElementById('espnow-spacing-input').value || 60;
+
+        let roleParam = "standalone";
+        let slotParam = 0;
+        if (selRole === "leader") {
+            roleParam = "leader";
+        } else if (selRole.startsWith("follower")) {
+            roleParam = "follower";
+            slotParam = parseInt(selRole.split('_')[1]) || 1;
+        }
+
+        log(`[ESPNOW] Applying Swarm Role: ${roleParam}, Formation: ${selForm}, Spacing: ${spacing}cm`);
+        fetch(`/api/espnow/swarm?role=${roleParam}&formation=${selForm}&slot=${slotParam}&spacing=${spacing}`, { method: 'POST' })
+            .then(() => setTimeout(fetchEspNowData, 300));
+    });
+
+    document.getElementById('btn-espnow-remote-toggle').addEventListener('click', () => {
+        const nextState = !espnowRemoteEnabled;
+        log(`[ESPNOW] Toggling Gamepad Remote listening: ${nextState}`);
+        fetch(`/api/espnow/remote?enable=${nextState ? 1 : 0}`, { method: 'POST' })
+            .then(() => setTimeout(fetchEspNowData, 200));
+    });
+
     fetchPnPDevices();
     fetchPinMatrix();
     fetchFiles();
     fetchRos2Status();
     fetchSlamData();
     fetchAudioData();
+    fetchEspNowData();
     setInterval(fetchPnPDevices, 4000);
     setInterval(fetchTelemetry, 1000);
     setInterval(fetchRos2Status, 2000);
     setInterval(fetchSlamData, 1500);
     setInterval(fetchAudioData, 500);
+    setInterval(fetchEspNowData, 1500);
 </script>
 
 </body>

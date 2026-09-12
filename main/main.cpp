@@ -17,6 +17,7 @@
 #include "os_ros2.h"
 #include "os_slam.h"
 #include "os_audio.h"
+#include "os_espnow.h"
 
 using namespace TamimysticOS;
 
@@ -61,6 +62,9 @@ void os_core_start() {
 
     // 11. Initialize Audio Edge AI, I2S Drivers & Keyword Spotting
     AudioEngine::getInstance().init();
+
+    // 12. Initialize 2.4GHz ESP-NOW Swarm Mesh & Gamepad Radio
+    EspNowEngine::getInstance().init();
 
     // Background Task for System Heartbeat
     OSScheduler::getInstance().createTask("sys_heartbeat", 2048, 1, CORE_0, []() {
