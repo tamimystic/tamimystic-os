@@ -38,7 +38,16 @@ jobs:
           . /opt/esp/idf/export.sh
           git config --global --add safe.directory "*"
           idf.py set-target esp32s3
-          idf.py build
+          set -o pipefail
+          idf.py build 2>&1 | tee idf_build_log.txt
+
+      - name: Archive Build Log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: esp_idf_build_log
+          path: idf_build_log.txt
+          if-no-files-found: ignore
 
       - name: Archive Firmware (BIN & ELF Binaries)
         uses: actions/upload-artifact@v4

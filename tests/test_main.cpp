@@ -49,11 +49,14 @@ int main(int argc, char** argv) {
     std::cout << "  Total Execution Time:  " << std::fixed << std::setprecision(2) << total_ms << " ms\n";
     std::cout << "-------------------------------------------------------\n";
 
+    std::cout.flush();
     if (stats.assertions_failed == 0 && stats.suites_failed == 0) {
         std::cout << "\n >>> ALL UNIT TESTS COMPLETED SUCCESSFULLY! [100% PASS] <<<\n\n";
-        return 0;
+        std::cout.flush();
+        std::exit(0);
     } else {
         std::cout << "\n >>> REGRESSION DETECTED: SOME TESTS FAILED! <<<\n\n";
-        return 1;
+        std::cout.flush();
+        std::exit(1);
     }
 }

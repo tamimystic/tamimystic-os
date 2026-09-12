@@ -5,7 +5,7 @@ if(DEFINED ENV{IDF_PATH})
                                 "port_esp32/hal_pwm_esp32.cpp"
                                 "port_esp32/hal_i2c_esp32.cpp"
                            INCLUDE_DIRS "include"
-                           PRIV_REQUIRES driver freertos esp_timer)
+                           PRIV_REQUIRES driver freertos esp_timer log)
 else()
     # Native POSIX build
     add_library(os_hal STATIC "port_native/hal_uart_native.cpp"

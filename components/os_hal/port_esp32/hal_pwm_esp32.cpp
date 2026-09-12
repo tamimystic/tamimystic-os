@@ -1,5 +1,6 @@
 #include "os_hal_pwm.h"
 #include "driver/ledc.h"
+#include <stdint.h>
 
 extern "C" {
 
