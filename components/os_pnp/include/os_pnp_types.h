@@ -69,6 +69,18 @@ enum class PinFunction {
     MOTOR_R_IN3,
     MOTOR_R_IN4,
     MOTOR_R_PWM,
+    MOTOR_FL_PWM,
+    MOTOR_FL_IN1,
+    MOTOR_FL_IN2,
+    MOTOR_FR_PWM,
+    MOTOR_FR_IN1,
+    MOTOR_FR_IN2,
+    MOTOR_RL_PWM,
+    MOTOR_RL_IN1,
+    MOTOR_RL_IN2,
+    MOTOR_RR_PWM,
+    MOTOR_RR_IN1,
+    MOTOR_RR_IN2,
     SERVO_PWM,
     ENCODER_L_A,
     ENCODER_L_B,
@@ -94,6 +106,18 @@ inline const char* pinFunctionToString(PinFunction func) {
         case PinFunction::MOTOR_R_IN3:      return "Motor Right IN3";
         case PinFunction::MOTOR_R_IN4:      return "Motor Right IN4";
         case PinFunction::MOTOR_R_PWM:      return "Motor Right PWM";
+        case PinFunction::MOTOR_FL_PWM:     return "Motor Front-Left PWM";
+        case PinFunction::MOTOR_FL_IN1:     return "Motor Front-Left IN1";
+        case PinFunction::MOTOR_FL_IN2:     return "Motor Front-Left IN2";
+        case PinFunction::MOTOR_FR_PWM:     return "Motor Front-Right PWM";
+        case PinFunction::MOTOR_FR_IN1:     return "Motor Front-Right IN1";
+        case PinFunction::MOTOR_FR_IN2:     return "Motor Front-Right IN2";
+        case PinFunction::MOTOR_RL_PWM:     return "Motor Rear-Left PWM";
+        case PinFunction::MOTOR_RL_IN1:     return "Motor Rear-Left IN1";
+        case PinFunction::MOTOR_RL_IN2:     return "Motor Rear-Left IN2";
+        case PinFunction::MOTOR_RR_PWM:     return "Motor Rear-Right PWM";
+        case PinFunction::MOTOR_RR_IN1:     return "Motor Rear-Right IN1";
+        case PinFunction::MOTOR_RR_IN2:     return "Motor Rear-Right IN2";
         case PinFunction::SERVO_PWM:        return "Servo PWM";
         case PinFunction::ENCODER_L_A:      return "Encoder Left A";
         case PinFunction::ENCODER_L_B:      return "Encoder Left B";

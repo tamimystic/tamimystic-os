@@ -9,6 +9,7 @@ add_executable(tamimystic_tests
     test_ble.cpp
     test_audio_dsp.cpp
     test_event_bus.cpp
+    test_python_runner.cpp
 )
 
 target_include_directories(tamimystic_tests PRIVATE

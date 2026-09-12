@@ -18,6 +18,7 @@ public:
     // Peer Management
     bool addPeer(const uint8_t mac[6], uint8_t channel = 1);
     bool removePeer(const uint8_t mac[6]);
+    void syncWifiChannel(uint8_t channel);
     std::vector<EspNowPeer> getPeers() const;
     std::string getPeersJson() const;
 

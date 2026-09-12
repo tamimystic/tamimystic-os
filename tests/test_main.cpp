@@ -10,6 +10,7 @@ void run_espnow_swarm_test_suite();
 void run_ble_test_suite();
 void run_audio_dsp_test_suite();
 void run_event_bus_test_suite();
+void run_python_runner_test_suite();
 
 int main(int argc, char** argv) {
     (void)argc;
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
     run_ble_test_suite();
     run_audio_dsp_test_suite();
     run_event_bus_test_suite();
+    run_python_runner_test_suite();
 
     auto end_all = std::chrono::high_resolution_clock::now();
     double total_ms = std::chrono::duration<double, std::milli>(end_all - start_all).count();

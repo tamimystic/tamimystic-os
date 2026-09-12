@@ -21,6 +21,7 @@ graph TD
         Suite5["Bluetooth Low Energy BLE 5.0 GATT Stack (test_ble.cpp)"]
         Suite6["Audio DSP Engine & KWS Keyword Spotting (test_audio_dsp.cpp)"]
         Suite7["Event Bus Asynchronous Publish/Subscribe (test_event_bus.cpp)"]
+        Suite8["MicroPython Multi-Line Loops & Branching (test_python_runner.cpp)"]
     end
 
     TestExecutable --> Suite1
@@ -30,6 +31,7 @@ graph TD
     TestExecutable --> Suite5
     TestExecutable --> Suite6
     TestExecutable --> Suite7
+    TestExecutable --> Suite8
 
     TestSuites --> SummaryReporter["Aggregated Test & Assertion Summary (100% Pass)"]
 ```
@@ -67,6 +69,12 @@ graph TD
 
 ### 7. Event Bus Publish/Subscribe Engine (`test_event_bus.cpp`)
 - **Asynchronous Event Dispatch**: Tests thread-safe event queuing, condition-variable wakeup, topic subscription, and multi-subscriber callback delivery.
+
+### 8. MicroPython Scripting & Control Flow (`test_python_runner.cpp`)
+- **Variable & Expression Evaluation**: Tests dynamic variable assignment and basic arithmetic.
+- **Multi-Line For Loops**: Tests `for i in range(count):` block parsing and sequential iteration.
+- **If-Else Conditional Branching**: Tests comparison expressions and branch selection.
+
 
 ---
 

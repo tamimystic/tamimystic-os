@@ -153,6 +153,15 @@ bool EspNowEngine::addPeer(const uint8_t mac[6], uint8_t channel) {
     return true;
 }
 
+void EspNowEngine::syncWifiChannel(uint8_t channel) {
+    std::lock_guard<std::mutex> lock(espnow_mutex);
+#if USE_REAL_ESPNOW
+    esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+#endif
+    std::string msg = "[ESPNOW] Synced 2.4GHz RF radio channel with Wi-Fi to Channel " + std::to_string((int)channel) + "\n";
+    hal_uart_print(msg.c_str());
+}
+
 bool EspNowEngine::removePeer(const uint8_t mac[6]) {
     std::lock_guard<std::mutex> lock(espnow_mutex);
     for (auto it = peers.begin(); it != peers.end(); ++it) {

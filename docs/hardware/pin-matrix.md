@@ -90,6 +90,18 @@ The complete list of supported abstract pin functions, their internal string ide
 | `MOTOR_R_IN3` | `motor_r_in3` | **GPIO 7** | `os_motion / GPIO` | Right Motor H-Bridge Forward Direction |
 | `MOTOR_R_IN4` | `motor_r_in4` | **GPIO 15** | `os_motion / GPIO` | Right Motor H-Bridge Reverse Direction |
 | `MOTOR_R_PWM` | `motor_r_pwm` | **GPIO 16** | `os_motion / LEDC1` | Right Motor Speed PWM (10 kHz, 10-bit resolution) |
+| `MOTOR_FL_PWM` | `motor_fl_pwm` | **Unassigned** | `os_motion / LEDC0` | Front-Left Motor PWM (4WD Mecanum) |
+| `MOTOR_FL_IN1` | `motor_fl_in1` | **Unassigned** | `os_motion / GPIO` | Front-Left Motor Direction IN1 |
+| `MOTOR_FL_IN2` | `motor_fl_in2` | **Unassigned** | `os_motion / GPIO` | Front-Left Motor Direction IN2 |
+| `MOTOR_FR_PWM` | `motor_fr_pwm` | **Unassigned** | `os_motion / LEDC1` | Front-Right Motor PWM (4WD Mecanum) |
+| `MOTOR_FR_IN1` | `motor_fr_in1` | **Unassigned** | `os_motion / GPIO` | Front-Right Motor Direction IN1 |
+| `MOTOR_FR_IN2` | `motor_fr_in2` | **Unassigned** | `os_motion / GPIO` | Front-Right Motor Direction IN2 |
+| `MOTOR_RL_PWM` | `motor_rl_pwm` | **Unassigned** | `os_motion / LEDC2` | Rear-Left Motor PWM (4WD Mecanum) |
+| `MOTOR_RL_IN1` | `motor_rl_in1` | **Unassigned** | `os_motion / GPIO` | Rear-Left Motor Direction IN1 |
+| `MOTOR_RL_IN2` | `motor_rl_in2` | **Unassigned** | `os_motion / GPIO` | Rear-Left Motor Direction IN2 |
+| `MOTOR_RR_PWM` | `motor_rr_pwm` | **Unassigned** | `os_motion / LEDC3` | Rear-Right Motor PWM (4WD Mecanum) |
+| `MOTOR_RR_IN1` | `motor_rr_in1` | **Unassigned** | `os_motion / GPIO` | Rear-Right Motor Direction IN1 |
+| `MOTOR_RR_IN2` | `motor_rr_in2` | **Unassigned** | `os_motion / GPIO` | Rear-Right Motor Direction IN2 |
 | `SERVO_PWM` | `servo_pwm` | **GPIO 8** | `os_motion / LEDC2` | Direct PWM RC Servo Control (50 Hz, 14-bit) |
 | `ENCODER_L_A` | `encoder_l_a` | **GPIO 9** | `os_motion / PCNT0` | Left Wheel Quadrature Encoder Phase A |
 | `ENCODER_L_B` | `encoder_l_b` | **GPIO 10** | `os_motion / PCNT0` | Left Wheel Quadrature Encoder Phase B |

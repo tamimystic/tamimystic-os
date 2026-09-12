@@ -158,6 +158,37 @@ void RobotController::processControlLoop() {
 
 void RobotController::applyWheelOutputs(const WheelSpeeds& ws) {
     auto& pm = PinMatrixManager::getInstance();
+
+    // Check if 4-motor independent pins are configured (e.g. 4WD Mecanum)
+    int fl_pwm = pm.getPin(PinFunction::MOTOR_FL_PWM);
+    int fr_pwm = pm.getPin(PinFunction::MOTOR_FR_PWM);
+    int rl_pwm = pm.getPin(PinFunction::MOTOR_RL_PWM);
+    int rr_pwm = pm.getPin(PinFunction::MOTOR_RR_PWM);
+
+    if (fl_pwm >= 0 && fr_pwm >= 0 && rl_pwm >= 0 && rr_pwm >= 0) {
+        // 4WD Independent Motor Driver Logic
+        auto drive_single_motor = [&](float spd, PinFunction in1_f, PinFunction in2_f, int pwm_channel) {
+            int in1 = pm.getPin(in1_f);
+            int in2 = pm.getPin(in2_f);
+            if (spd >= 0) {
+                if (in1 >= 0) hal_gpio_set_level(in1, 1);
+                if (in2 >= 0) hal_gpio_set_level(in2, 0);
+            } else {
+                if (in1 >= 0) hal_gpio_set_level(in1, 0);
+                if (in2 >= 0) hal_gpio_set_level(in2, 1);
+                spd = -spd;
+            }
+            hal_pwm_set_duty(pwm_channel, (int)std::clamp(spd, 0.0f, 100.0f));
+        };
+
+        drive_single_motor(ws.front_left, PinFunction::MOTOR_FL_IN1, PinFunction::MOTOR_FL_IN2, 0);
+        drive_single_motor(ws.front_right, PinFunction::MOTOR_FR_IN1, PinFunction::MOTOR_FR_IN2, 1);
+        drive_single_motor(ws.rear_left, PinFunction::MOTOR_RL_IN1, PinFunction::MOTOR_RL_IN2, 2);
+        drive_single_motor(ws.rear_right, PinFunction::MOTOR_RR_IN1, PinFunction::MOTOR_RR_IN2, 3);
+        return;
+    }
+
+    // Standard 2-Channel Differential Fallback
     int in1 = pm.getPin(PinFunction::MOTOR_L_IN1);
     int in2 = pm.getPin(PinFunction::MOTOR_L_IN2);
     int in3 = pm.getPin(PinFunction::MOTOR_R_IN3);

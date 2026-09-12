@@ -83,6 +83,8 @@ void os_core_start() {
     EventBus::getInstance().subscribe(EventTopic::NETWORK_STATE_CHANGE, [](const SystemEvent& evt) {
         if (NetworkManager::getInstance().getState() == NetworkState::CONNECTED_STA) {
             hal_uart_print("[SYS] Network is now CONNECTED!\n");
+            // Sync ESP-NOW 2.4GHz RF channel with connected Wi-Fi Station
+            EspNowEngine::getInstance().syncWifiChannel(1);
             // Start the Web Dashboard automatically once network is up
             WebServer::getInstance().start();
         } else if (NetworkManager::getInstance().getState() == NetworkState::DISCONNECTED) {

@@ -26,12 +26,12 @@ public:
     // Execute a Python script file stored in LittleFS
     ScriptExecutionResult runFile(const std::string& filename);
 
+    // Line parser and built-in Tamimystic OS API interpreter
+    void executeScriptLine(const std::string& line, std::string& stdout_stream);
+
 private:
     PythonRunner() = default;
     ~PythonRunner() = default;
-
-    // Line parser and built-in Tamimystic OS API interpreter
-    void executeScriptLine(const std::string& line, std::string& stdout_stream);
 };
 
 } // namespace TamimysticOS

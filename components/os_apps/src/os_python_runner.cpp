@@ -38,6 +38,72 @@ static inline std::string trim(const std::string& str) {
     return str.substr(first, (last - first + 1));
 }
 
+static size_t count_leading_spaces(const std::string& str) {
+    size_t count = 0;
+    for (char c : str) {
+        if (c == ' ') count++;
+        else if (c == '\t') count += 4;
+        else break;
+    }
+    return count;
+}
+
+static float resolveValue(const std::string& raw_expr) {
+    std::string expr = trim(raw_expr);
+    if (expr.empty()) return 0.0f;
+    if (script_variables.count(expr)) return script_variables[expr];
+    if (expr == "dist" || expr == "tamimystic.sensor.read_distance()") return 24.8f;
+
+    // Handle basic arithmetic operations
+    if (expr.find("+") != std::string::npos) {
+        size_t p = expr.find("+");
+        return resolveValue(expr.substr(0, p)) + resolveValue(expr.substr(p + 1));
+    }
+    if (expr.find("-") != std::string::npos && expr[0] != '-') {
+        size_t p = expr.find("-");
+        return resolveValue(expr.substr(0, p)) - resolveValue(expr.substr(p + 1));
+    }
+    if (expr.find("*") != std::string::npos) {
+        size_t p = expr.find("*");
+        return resolveValue(expr.substr(0, p)) * resolveValue(expr.substr(p + 1));
+    }
+    if (expr.find("/") != std::string::npos) {
+        size_t p = expr.find("/");
+        float denom = resolveValue(expr.substr(p + 1));
+        return (denom != 0.0f) ? (resolveValue(expr.substr(0, p)) / denom) : 0.0f;
+    }
+    return (float)std::atof(expr.c_str());
+}
+
+static bool evaluateCondition(const std::string& cond_str) {
+    std::string cond = trim(cond_str);
+    if (cond.find("==") != std::string::npos) {
+        size_t p = cond.find("==");
+        return resolveValue(cond.substr(0, p)) == resolveValue(cond.substr(p + 2));
+    }
+    if (cond.find("!=") != std::string::npos) {
+        size_t p = cond.find("!=");
+        return resolveValue(cond.substr(0, p)) != resolveValue(cond.substr(p + 2));
+    }
+    if (cond.find("<=") != std::string::npos) {
+        size_t p = cond.find("<=");
+        return resolveValue(cond.substr(0, p)) <= resolveValue(cond.substr(p + 2));
+    }
+    if (cond.find(">=") != std::string::npos) {
+        size_t p = cond.find(">=");
+        return resolveValue(cond.substr(0, p)) >= resolveValue(cond.substr(p + 2));
+    }
+    if (cond.find("<") != std::string::npos) {
+        size_t p = cond.find("<");
+        return resolveValue(cond.substr(0, p)) < resolveValue(cond.substr(p + 1));
+    }
+    if (cond.find(">") != std::string::npos) {
+        size_t p = cond.find(">");
+        return resolveValue(cond.substr(0, p)) > resolveValue(cond.substr(p + 1));
+    }
+    return resolveValue(cond) != 0.0f;
+}
+
 void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& stdout_stream) {
     std::string line = trim(raw_line);
     if (line.empty() || line[0] == '#' || line.rfind("import ", 0) == 0) {
@@ -78,7 +144,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
             script_variables[var_name] = 24.8f;
             return;
         }
-        script_variables[var_name] = (float)std::atof(expr.c_str());
+        script_variables[var_name] = resolveValue(expr);
         return;
     }
 
@@ -88,8 +154,8 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string v_str, w_str;
         if (std::getline(ss, v_str, ',') && std::getline(ss, w_str, ',')) {
-            float v = (float)std::atof(trim(v_str).c_str());
-            float w = (float)std::atof(trim(w_str).c_str());
+            float v = resolveValue(v_str);
+            float w = resolveValue(w_str);
             RobotController::getInstance().setTwist(v, 0.0f, w);
             stdout_stream += "[ROBOT] Velocity commanded: Vx=" + std::to_string((int)v) + "%, W=" + std::to_string((int)w) + "%\n";
         }
@@ -103,7 +169,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::string tok;
         std::vector<float> j_vals;
         while (std::getline(ss, tok, ',')) {
-            j_vals.push_back((float)std::atof(trim(tok).c_str()));
+            j_vals.push_back(resolveValue(tok));
         }
         if (j_vals.size() >= 6) {
             ArmJoints joints = {j_vals[0], j_vals[1], j_vals[2], j_vals[3], j_vals[4], j_vals[5]};
@@ -119,9 +185,9 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string x_s, y_s, z_s;
         if (std::getline(ss, x_s, ',') && std::getline(ss, y_s, ',') && std::getline(ss, z_s, ',')) {
-            float x = (float)std::atof(trim(x_s).c_str());
-            float y = (float)std::atof(trim(y_s).c_str());
-            float z = (float)std::atof(trim(z_s).c_str());
+            float x = resolveValue(x_s);
+            float y = resolveValue(y_s);
+            float z = resolveValue(z_s);
             ArmPose p = {x, y, z, 0.0f, 0.0f};
             bool ok = RobotController::getInstance().setArmTargetIK(p);
             stdout_stream += (ok ? "[ROBOT:IK] Target reached: (" + x_s + ", " + y_s + ", " + z_s + " cm)\n" : "[ROBOT:IK] Error: Target unreachable!\n");
@@ -142,8 +208,8 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string p_str, l_str;
         if (std::getline(ss, p_str, ',') && std::getline(ss, l_str, ',')) {
-            int p = std::atoi(trim(p_str).c_str());
-            int l = std::atoi(trim(l_str).c_str());
+            int p = (int)resolveValue(p_str);
+            int l = (int)resolveValue(l_str);
             hal_gpio_set_level(p, l);
             stdout_stream += "[GPIO] Pin " + std::to_string(p) + " -> " + std::to_string(l) + "\n";
         }
@@ -152,7 +218,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
 
     // 8. tamimystic.delay(ms)
     if (line.rfind("tamimystic.delay(", 0) == 0 && line.back() == ')') {
-        int ms = std::atoi(line.substr(17, line.length() - 18).c_str());
+        int ms = (int)resolveValue(line.substr(17, line.length() - 18));
         OSScheduler::getInstance().delay(ms);
         return;
     }
@@ -184,8 +250,8 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string x_s, y_s;
         if (std::getline(ss, x_s, ',') && std::getline(ss, y_s, ',')) {
-            float x = (float)std::atof(trim(x_s).c_str());
-            float y = (float)std::atof(trim(y_s).c_str());
+            float x = resolveValue(x_s);
+            float y = resolveValue(y_s);
             bool ok = SlamEngine::getInstance().setNavigationGoal(x, y);
             stdout_stream += (ok ? "[SLAM:NAV] Goal set: (" + x_s + ", " + y_s + " cm)\n" : "[SLAM:NAV] Failed: Target unreachable or out of bounds\n");
         }
@@ -221,8 +287,8 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
         std::stringstream ss(args_str);
         std::string f_s, d_s;
         if (std::getline(ss, f_s, ',') && std::getline(ss, d_s, ',')) {
-            uint16_t freq = (uint16_t)std::atoi(trim(f_s).c_str());
-            uint16_t dur = (uint16_t)std::atoi(trim(d_s).c_str());
+            uint16_t freq = (uint16_t)resolveValue(f_s);
+            uint16_t dur = (uint16_t)resolveValue(d_s);
             AudioEngine::getInstance().playTone(freq, dur);
             stdout_stream += "[AUDIO:DAC] Tone played: " + f_s + " Hz (" + d_s + " ms)\n";
         }
@@ -231,7 +297,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
 
     // 16. tamimystic.audio.beep(pattern)
     if (line.rfind("tamimystic.audio.beep(", 0) == 0 && line.back() == ')') {
-        int pat = std::atoi(line.substr(22, line.length() - 23).c_str());
+        int pat = (int)resolveValue(line.substr(22, line.length() - 23));
         AudioEngine::getInstance().playBeepPattern(pat);
         stdout_stream += "[AUDIO] Beep pattern " + std::to_string(pat) + " played.\n";
         return;
@@ -239,7 +305,7 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
 
     // 17. tamimystic.audio.volume(vol)
     if (line.rfind("tamimystic.audio.volume(", 0) == 0 && line.back() == ')') {
-        int vol = std::atoi(line.substr(24, line.length() - 25).c_str());
+        int vol = (int)resolveValue(line.substr(24, line.length() - 25));
         AudioEngine::getInstance().setVolume((uint8_t)vol);
         stdout_stream += "[AUDIO] Volume set to " + std::to_string(vol) + "%\n";
         return;
@@ -254,8 +320,8 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
             if (!r_s.empty() && (r_s.front() == '"' || r_s.front() == '\'')) r_s = r_s.substr(1, r_s.length() - 2);
             uint8_t slot = 0;
             float spacing = 60.0f;
-            if (std::getline(ss, slot_s, ',')) slot = (uint8_t)std::atoi(trim(slot_s).c_str());
-            if (std::getline(ss, sp_s, ',')) spacing = (float)std::atof(trim(sp_s).c_str());
+            if (std::getline(ss, slot_s, ',')) slot = (uint8_t)resolveValue(slot_s);
+            if (std::getline(ss, sp_s, ',')) spacing = resolveValue(sp_s);
 
             SwarmRole role = SwarmRole::STANDALONE;
             if (r_s == "leader") role = SwarmRole::LEADER;
@@ -310,17 +376,139 @@ void PythonRunner::executeScriptLine(const std::string& raw_line, std::string& s
     }
 }
 
+static void executeLinesBlock(const std::vector<std::string>& lines, size_t& idx, size_t base_indent, std::string& stdout_stream) {
+    while (idx < lines.size()) {
+        const std::string& raw = lines[idx];
+        std::string t = trim(raw);
+        if (t.empty() || t[0] == '#') {
+            idx++;
+            continue;
+        }
+
+        size_t indent = count_leading_spaces(raw);
+        if (indent < base_indent) {
+            return; // Exit block when indentation decreases
+        }
+
+        // For Loop Block: for <var> in range(...):
+        if (t.rfind("for ", 0) == 0 && t.find(" in range(") != std::string::npos && t.back() == ':') {
+            size_t var_start = 4;
+            size_t in_pos = t.find(" in range(");
+            std::string var_name = trim(t.substr(var_start, in_pos - var_start));
+            std::string range_params = t.substr(in_pos + 10, t.length() - (in_pos + 10) - 2);
+
+            int start_val = 0;
+            int end_val = 0;
+            if (range_params.find(",") != std::string::npos) {
+                size_t c_pos = range_params.find(",");
+                start_val = (int)resolveValue(range_params.substr(0, c_pos));
+                end_val = (int)resolveValue(range_params.substr(c_pos + 1));
+            } else {
+                end_val = (int)resolveValue(range_params);
+            }
+
+            idx++;
+            size_t loop_body_start = idx;
+            size_t body_indent = 0;
+            if (idx < lines.size()) body_indent = count_leading_spaces(lines[idx]);
+            if (body_indent <= indent) body_indent = indent + 2;
+
+            // Collect loop body lines
+            std::vector<std::string> body_lines;
+            while (idx < lines.size() && (count_leading_spaces(lines[idx]) >= body_indent || trim(lines[idx]).empty())) {
+                body_lines.push_back(lines[idx]);
+                idx++;
+            }
+
+            // Execute loop iterations
+            for (int val = start_val; val < end_val; val++) {
+                script_variables[var_name] = (float)val;
+                size_t b_idx = 0;
+                executeLinesBlock(body_lines, b_idx, body_indent, stdout_stream);
+            }
+            continue;
+        }
+
+        // While Loop Block: while <cond>:
+        if (t.rfind("while ", 0) == 0 && t.back() == ':') {
+            std::string cond_str = t.substr(6, t.length() - 7);
+            idx++;
+            size_t body_indent = 0;
+            if (idx < lines.size()) body_indent = count_leading_spaces(lines[idx]);
+            if (body_indent <= indent) body_indent = indent + 2;
+
+            std::vector<std::string> body_lines;
+            while (idx < lines.size() && (count_leading_spaces(lines[idx]) >= body_indent || trim(lines[idx]).empty())) {
+                body_lines.push_back(lines[idx]);
+                idx++;
+            }
+
+            int safety_counter = 0;
+            while (evaluateCondition(cond_str) && safety_counter++ < 500) {
+                size_t b_idx = 0;
+                executeLinesBlock(body_lines, b_idx, body_indent, stdout_stream);
+            }
+            continue;
+        }
+
+        // If-Else Block: if <cond>:
+        if (t.rfind("if ", 0) == 0 && t.back() == ':') {
+            std::string cond_str = t.substr(3, t.length() - 4);
+            bool cond_met = evaluateCondition(cond_str);
+
+            idx++;
+            size_t body_indent = 0;
+            if (idx < lines.size()) body_indent = count_leading_spaces(lines[idx]);
+            if (body_indent <= indent) body_indent = indent + 2;
+
+            std::vector<std::string> if_body;
+            while (idx < lines.size() && (count_leading_spaces(lines[idx]) >= body_indent || trim(lines[idx]).empty())) {
+                if_body.push_back(lines[idx]);
+                idx++;
+            }
+
+            std::vector<std::string> else_body;
+            if (idx < lines.size() && trim(lines[idx]) == "else:") {
+                idx++;
+                size_t else_indent = (idx < lines.size()) ? count_leading_spaces(lines[idx]) : (indent + 2);
+                while (idx < lines.size() && (count_leading_spaces(lines[idx]) >= else_indent || trim(lines[idx]).empty())) {
+                    else_body.push_back(lines[idx]);
+                    idx++;
+                }
+            }
+
+            if (cond_met) {
+                size_t b_idx = 0;
+                executeLinesBlock(if_body, b_idx, body_indent, stdout_stream);
+            } else if (!else_body.empty()) {
+                size_t b_idx = 0;
+                executeLinesBlock(else_body, b_idx, body_indent, stdout_stream);
+            }
+            continue;
+        }
+
+        // Normal single statement execution
+        PythonRunner::getInstance().executeScriptLine(t, stdout_stream);
+        idx++;
+    }
+}
+
 ScriptExecutionResult PythonRunner::eval(const std::string& python_code) {
     ScriptExecutionResult result;
     auto start_time = std::chrono::steady_clock::now();
 
     std::stringstream ss(python_code);
     std::string line;
-    std::string stdout_buffer = "";
+    std::vector<std::string> lines;
 
     while (std::getline(ss, line)) {
-        executeScriptLine(line, stdout_buffer);
+        lines.push_back(line);
     }
+
+    std::string stdout_buffer = "";
+    size_t idx = 0;
+    executeLinesBlock(lines, idx, 0, stdout_buffer);
+
     result.success = true;
     result.stdout_output = stdout_buffer;
 
