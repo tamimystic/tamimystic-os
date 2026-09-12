@@ -1,177 +1,147 @@
-﻿# 2D LiDAR SLAM and Occupancy Grid Navigation
+# 2D LiDAR and SLAM Navigation
 
-Tamimystic OS features an embedded real-time 2D LiDAR SLAM (Simultaneous Localization and Mapping) and autonomous path planning engine. Operating directly on the ESP32-S3 (with 8MB PSRAM acceleration) or in the native PC simulation environment, the SLAM subsystem maintains a 200x200 2D occupancy grid, performs real-time ray-casting, and plans collision-free trajectories using an optimized A* search algorithm.
+Tamimystic OS features an onboard **2D LiDAR SLAM (Simultaneous Localization and Mapping)** and **Autonomous Path Planning Engine** (`os_slam`). By executing lightweight log-odds Bayesian mapping and $A^*$ heuristic pathfinding in the 8 MB Octal PSRAM of the ESP32-S3, the robot achieves fully autonomous indoor navigation without requiring an external companion computer.
 
 ---
 
-## System Architecture
+## Hardware Interfacing: 2D UART LiDAR Protocol
+
+Tamimystic OS supports standard UART-based 360-degree 2D LiDAR sensors (RPLiDAR A1/A2, LD06, D200, YDLIDAR X2/X4):
+
+- **Physical Interface**: Hardware UART2 (`RX`: GPIO 17, `TX`: GPIO 18) at `115200` or `230400 baud`.
+- **Scan Rate**: 5 Hz to 12 Hz (360 samples per revolution).
+- **Measurement Envelope**: $0.15\text{ m}$ to $12.0\text{ m}$ with $\pm 1.5\%$ ranging accuracy.
 
 ```mermaid
-graph TD
-    subgraph Hardware["LiDAR Hardware / Simulation"]
-        RPLIDAR["RPLiDAR A1 / A2 (UART 115200)"]
-        LD19["LD19 / D300 LiDAR (UART 230400)"]
-        SIM["Simulated 360 Laser Scanner"]
-    end
-
-    subgraph SLAM_Core["Core 1: SLAM Engine & Navigation"]
-        PARSE["LiDAR Packet Parser (360 Range/Angle)"]
-        BRESENHAM["Bresenham Fast Ray-Casting"]
-        GRID["200x200 PSRAM Occupancy Grid (10m x 10m @ 5cm/cell)"]
-        ASTAR["A* Path Planner with Obstacle Inflation"]
-        PURSUIT["Pure-Pursuit Waypoint Controller"]
-    end
-
-    subgraph Actuation["Robotics Kinematics"]
-        KIN["Differential / Mecanum Controller (50Hz)"]
-    end
-
-    subgraph Interfaces["User & Network Interfaces"]
-        WEB["Web Dashboard (Interactive Canvas & Click-to-Nav)"]
-        CLI["Interactive Shell (slam status, nav, scan)"]
-        PYTHON["MicroPython (tamimystic.slam.*)"]
-        ROS2["micro-ROS (/scan, /map, /nav_goal)"]
-    end
-
-    RPLIDAR --> PARSE
-    LD19 --> PARSE
-    SIM --> PARSE
-
-    PARSE --> BRESENHAM
-    BRESENHAM --> GRID
-    GRID --> ASTAR
-    ASTAR --> PURSUIT
-    PURSUIT -->|setTwist(vx, vy, omega)| KIN
-
-    GRID <--> WEB
-    GRID <--> CLI
-    GRID <--> PYTHON
-    GRID <--> ROS2
+graph LR
+    LiDAR["2D UART LiDAR Scanner"] -->|UART2 DMA Ingress| Parser["Packet Frame Parser & CRC Validator"]
+    Parser -->|Raw Polar Points (theta_i, r_i)| CoordTransform["Polar to Cartesian Transform (x_i, y_i)"]
+    CoordTransform --> Raycaster["Bresenham Discrete Raycasting Engine"]
+    Raycaster --> GridMap["80x80 Occupancy Grid (Log-Odds PSRAM Buffer)"]
+    GridMap --> AStar["A* Global Path Planning Algorithm"]
+    AStar --> MotionCtrl["1000Hz Motion Controller Execution"]
 ```
 
 ---
 
-## Occupancy Grid Specifications
+## Polar to Cartesian Coordinate Transformation
 
-| Parameter | Value | Description |
-|---|---|---|
-| **Grid Dimensions** | 200 x 200 cells | 10m x 10m total map coverage |
-| **Grid Resolution** | 5.0 cm / cell | Granular navigation precision |
-| **Memory Footprint** | 40,000 bytes (40 KB) | Statically mapped into ESP32-S3 8MB Octal PSRAM |
-| **Cell State Values** | `0` = Unknown, `-1` = Free/Traversable, `100` = Obstacle | Three-state probability representation |
-| **Origin Reference** | Center Cell (100, 100) | Robot initial coordinates (0.0, 0.0 cm) |
-| **LiDAR Update Rate** | 10 Hz (Core 1 Task) | Real-time map evolution |
+Each incoming LiDAR beam measurement consists of an angle $\theta_i \in [0, 2\pi)$ and radial distance $r_i$:
 
----
+### Robot Frame Transformation:
+$$x_{\text{robot}} = r_i \cdot \cos(\theta_i)$$
 
-## Supported 2D LiDAR Sensors and Pinout
+$$y_{\text{robot}} = r_i \cdot \sin(\theta_i)$$
 
-Tamimystic OS provides dedicated UART packet drivers with hardware checksum verification:
+### Global Map Frame Transformation:
+Given the robot's current odometry pose $(x_{\text{odom}}, y_{\text{odom}}, \theta_{\text{odom}})$:
 
-### 1. RPLiDAR A1 / A2 (Slamtec)
-* **Baud Rate**: 115200 bps (8N1)
-* **Default Wiring**:
-  * **VCC**: 5V (External Power recommended for motor spin)
-  * **GND**: Common Ground
-  * **TX (LiDAR)**: Connect to ESP32-S3 **GPIO 18** (RX)
-  * **RX (LiDAR)**: Connect to ESP32-S3 **GPIO 17** (TX)
-  * **MOTOCTRL**: Connect to 5V or PWM GPIO for speed modulation
+$$x_{\text{map}} = x_{\text{odom}} + x_{\text{robot}} \cdot \cos(\theta_{\text{odom}}) - y_{\text{robot}} \cdot \sin(\theta_{\text{odom}})$$
 
-### 2. LD06 / LD19 / D300 (LDROBOT)
-* **Baud Rate**: 230400 bps (8N1)
-* **Default Wiring**:
-  * **VCC**: 5V (5V motor + 3.3V logic)
-  * **GND**: Common Ground
-  * **TX (LiDAR)**: Connect to ESP32-S3 **GPIO 18** (RX)
-  * **PWM / EN**: Connect to 3.3V for constant 10Hz rotation
+$$y_{\text{map}} = y_{\text{odom}} + x_{\text{robot}} \cdot \sin(\theta_{\text{odom}}) + y_{\text{robot}} \cdot \cos(\theta_{\text{odom}})$$
 
 ---
 
-## Mapping and Path Planning Algorithms
+## 2D Occupancy Grid Mapping & Bayesian Log-Odds Updates
 
-### 1. Bresenham Fast Ray-Casting
-Every laser scan point (distance d, angle theta) is converted into cartesian coordinates relative to the robot's current pose (x_r, y_r, theta_r):
+The map is represented as an $80 \times 80$ discrete grid with a cell resolution of $5\text{ cm}$ per pixel (representing a $4.0\text{ m} \times 4.0\text{ m}$ local navigation arena).
 
-- x_w = x_r + d * cos(theta_r + theta)
-- y_w = y_r + d * sin(theta_r + theta)
+Each grid cell $m_{i,j}$ stores a log-odds occupancy probability value $l(m_{i,j})$:
 
-A discrete Bresenham line algorithm traces the line segment from the robot origin cell to (x_w, y_w):
-* All intermediate grid cells along the beam are marked as **Free** (`-1`).
-* The termination endpoint cell is marked as **Occupied** (`100`).
+$$l_t(m_{i,j}) = l_{t-1}(m_{i,j}) + \text{sensor\_model}(m_{i,j}, z_t) - l_0$$
 
-### 2. A* (A-Star) Path Search with Inflation
-When an autonomous target is commanded:
-1. **Safety Inflation**: Obstacle cells are dynamically inflated by a safety radius (3 cells / 15 cm) to keep the robot from scraping walls.
-2. **Heuristic Evaluation**: The priority queue evaluates nodes via f(n) = g(n) + h(n), where g(n) is the exact travel cost and h(n) is Euclidean distance to the goal.
-3. **Waypoint Navigation**: The generated path is fed into a pure-pursuit trajectory controller that adjusts linear and angular velocities to smoothly follow waypoints.
+Where:
+- $l_0 = 0.0$ represents the prior unmapped state ($P(\text{occupied}) = 0.5$).
+- $\text{sensor\_model} = +0.85$ (Log-Odds increment for obstacle hit cell).
+- $\text{sensor\_model} = -0.40$ (Log-Odds decrement for free-space raycasted cells).
 
----
+To convert log-odds back to visual occupancy probability $[0.0, 1.0]$ for the Web Dashboard:
+$$P(m_{i,j}) = 1 - \frac{1}{1 + \exp(l(m_{i,j}))}$$
 
-## Interactive Web Dashboard Navigation
-
-The integrated Web Dashboard includes a live 2D SLAM Canvas with click-to-navigate functionality:
-
-1. Open `http://<device-ip>/` in your browser.
-2. Locate the **2D LiDAR SLAM and A* Navigation** card.
-3. The canvas renders:
-   * **Dark Blue Cells**: Explored, traversable terrain.
-   * **Red Cells**: Detected walls, obstacles, and furniture.
-   * **Cyan Triangle**: Live robot position and heading orientation.
-   * **Cyan Trajectory Line**: A* planned path waypoints.
-   * **Gold Marker**: Current destination goal.
-4. **Click-to-Navigate**: Click anywhere on the map to set a new goal. The robot calculates a collision-free path and navigates autonomously.
+### Bresenham Discrete Raycasting:
+For every valid LiDAR distance reading, the kernel executes Bresenham's integer line algorithm to trace all grid cells from the robot center $(x_r, y_r)$ to the target obstacle cell $(x_o, y_o)$, decrementing free-space cells and incrementing the terminal obstacle cell.
 
 ---
 
-## Python API Reference
+## $A^*$ (A-Star) Global Path Planning
 
-Scripts executed via the in-browser IDE or uploaded as `.py` files can access SLAM routines via `tamimystic.slam`:
+When a target waypoint $(x_{\text{goal}}, y_{\text{goal}})$ is designated, the $A^*$ planner computes the shortest collision-free path across the 8-connected grid graph:
+
+$$f(n) = g(n) + h(n)$$
+
+Where:
+- $g(n)$ is the exact path cost from the start node to node $n$.
+  - Straight step cost $= 1.0$ ($5\text{ cm}$).
+  - Diagonal step cost $= \sqrt{2} \approx 1.414$ ($7.07\text{ cm}$).
+- $h(n)$ is the admissible Euclidean distance heuristic:
+  $$h(n) = \sqrt{(x_n - x_{\text{goal}})^2 + (y_n - y_{\text{goal}})^2}$$
+
+### Obstacle Inflation:
+To prevent the robot's physical chassis (radius $R_{\text{robot}} = 15\text{ cm}$) from clipping corners, all detected occupied cells undergo a 3-cell morphological dilation (obstacle inflation radius).
+
+---
+
+## Dynamic PSRAM Memory Allocation
+
+To prevent internal SRAM heap overflow, the entire SLAM state is dynamically allocated in the 8 MB Octal PSRAM:
+- Grid Occupancy Buffer: $80 \times 80 \times 4\text{ bytes} = 25.6\text{ KB}$
+- $A^*$ Open/Closed Score Buffers: $80 \times 80 \times 8\text{ bytes} = 51.2\text{ KB}$
+- Polar Scan Raw Buffer: $360 \times 4\text{ bytes} = 1.44\text{ KB}$
+
+---
+
+## MicroPython SLAM API
 
 ```python
 import tamimystic
+import time
 
-# Clear or reset the existing grid map
-tamimystic.slam.clear()
+# Start LiDAR scanning and SLAM engine
+tamimystic.slam.start()
 
-# Set an autonomous navigation goal (x, y in cm)
-tamimystic.slam.nav(150.0, 80.0)
+# Query current robot SLAM pose
+pose = tamimystic.slam.get_pose()
+print(f"SLAM Estimated Pose: X={pose['x']:.2f}m, Y={pose['y']:.2f}m, Theta={pose['theta']:.1f}deg")
 
-# Abort active navigation
-tamimystic.slam.cancel()
+# Plan and navigate to target waypoint (X=1.5m, Y=2.0m)
+path = tamimystic.slam.plan_path(goal_x=1.5, goal_y=2.0)
+print(f"Generated Path contains {len(path)} waypoints")
+
+# Start autonomous waypoint following
+tamimystic.slam.navigate_to(goal_x=1.5, goal_y=2.0)
+
+# Export Occupancy Grid as Base64 image
+grid_data = tamimystic.slam.get_grid_png()
 ```
 
 ---
 
-## Serial CLI Commands
+## Serial CLI and REST API Reference
 
-Manage the SLAM subsystem directly from the interactive shell:
-
+### Serial CLI:
 ```bash
-# Check SLAM status, explored cells, robot pose, and active goals
-aeron> slam status
+# Start LiDAR scan and mapping daemon
+tamimystic> slam start
 
-# Set an autonomous navigation target (x, y in cm)
-aeron> slam nav 120.0 50.0
+# Display ASCII visualization of 80x80 occupancy grid
+tamimystic> slam map
 
-# Print a 360-degree point-cloud sample
-aeron> slam scan
+# Plan and execute path to target waypoint (x, y in meters)
+tamimystic> slam goto 1.5 2.0
 
-# Clear and reset the occupancy grid map
-aeron> slam clear
-
-# Switch LiDAR sensor driver (sim, rplidar, ld19)
-aeron> slam lidar rplidar
+# Clear map grid
+tamimystic> slam clear
 ```
 
----
+### HTTP REST API:
+```bash
+# Fetch live 80x80 Occupancy Grid Map
+GET /api/slam/map
 
-## REST API Endpoints
+# Start / Stop SLAM
+POST /api/slam/start
+POST /api/slam/stop
 
-| Endpoint | Method | Parameters | Response Description |
-|---|---|---|---|
-| `/api/slam/status` | `GET` | None | JSON object with pose, scan counts, and navigation state. |
-| `/api/slam/map` | `GET` | None | Compressed occupancy grid coordinates, robot pose, and active waypoints. |
-| `/api/slam/nav` | `POST` / `GET` | `x=<float>&y=<float>` | Sets an autonomous goal coordinate in centimeters. |
-| `/api/slam/clear` | `POST` / `GET` | None | Clears the occupancy map and resets exploration counters. |
-| `/api/slam/cancel` | `POST` / `GET` | None | Aborts the active A* navigation trajectory. |
-| `/api/slam/lidar` | `POST` / `GET` | `type=<sim|rplidar|ld19>` | Selects the active LiDAR driver. |
+# Dispatch Navigation Waypoint
+POST /api/slam/goto?x=1.5&y=2.0
+```

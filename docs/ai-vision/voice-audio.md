@@ -1,175 +1,141 @@
-﻿# Audio Edge AI, Keyword Spotting and Voice Synthesis
+# Voice Control and Audio Edge AI
 
-Tamimystic OS incorporates a low-latency, on-device Audio Edge AI subsystem designed for embedded voice control, real-time keyword spotting (KWS), and algorithmic voice speech synthesis. Operating directly on the ESP32-S3 Dual-Core Xtensa processor and native PC simulation, the audio subsystem processes 16kHz 16-bit PCM audio streams on Core 1 without needing external cloud APIs.
+Tamimystic OS features an integrated **Edge Audio DSP and Voice Control Engine** (`os_audio`). Operating over the I2S digital audio bus, the system captures 16 kHz 16-bit PCM audio, computes real-time Mel-Frequency Cepstral Coefficients (MFCC), and runs an on-device Keyword Spotting (KWS) deep learning network to execute voice commands without internet connectivity.
 
 ---
 
-## System Architecture
+## Hardware Architecture: Digital I2S Bus
+
+The audio subsystem interfaces with an I2S MEMS microphone (Knowles INMP441) and an I2S Class-D amplifier (Maxim Integrated MAX98357A):
 
 ```mermaid
-graph TD
-    subgraph Audio_Hardware["Audio Transducers & Hardware"]
-        MIC["INMP441 / SPH0645 Digital MEMS Microphone (I2S Rx)"]
-        DAC["MAX98357A / PCM5102 I2S DAC Amplifier (I2S Tx)"]
-        SPK["3W 4-Ohm Dynamic Speaker"]
-        DAC --> SPK
+graph LR
+    subgraph AudioTransceivers["Audio Peripherals"]
+        INMP441["INMP441 Digital MEMS Mic (16 kHz / 24-bit)"]
+        MAX98357A["MAX98357A 3.2W I2S Class-D DAC Amp"]
     end
 
-    subgraph Audio_Pipeline["Core 1: Audio Edge AI Pipeline"]
-        I2S_DMA["I2S DMA Ring Buffer (16kHz 16-bit Mono)"]
-        FEAT["Spectral Feature Extractor (Energy dB & FFT Peaks)"]
-        KWS["Quantized Neural Keyword Spotter (TFLite Micro / MFCC)"]
-        SYNTH["Formant Speech Synthesizer & Tone Sound Engine"]
+    subgraph ESP32Target["ESP32-S3 SoC"]
+        I2S0["I2S0 Hardware Peripheral Controller"]
+        AudioDMA["DMA Audio Ring Buffers (Ping-Pong in PSRAM)"]
+        DSPPipeline["MFCC Feature Extraction Pipeline (FFT & Mel Banks)"]
+        KWSEngine["1D-CNN / GRU Keyword Spotter (Core 1)"]
+        AudioSynth["WAV / PCM Voice Synthesizer & LittleFS Player"]
     end
 
-    subgraph Controllers["Robotics & Navigation Actuation"]
-        ROBOT["Kinematics Engine (Twist & Arm Joints)"]
-        SLAM["SLAM Navigation Controller"]
-    end
+    INMP441 -->|I2S SD_IN (GPIO 39)| I2S0
+    I2S0 -->|I2S SD_OUT (GPIO 40)| MAX98357A
+    I2S0 <--> AudioDMA
+    AudioDMA --> DSPPipeline
+    DSPPipeline --> KWSEngine
+    KWSEngine -->|Trigger Action| Motion["1000Hz Motion & Arm Engine"]
+    AudioSynth --> AudioDMA
+```
 
-    subgraph Interfaces["Interfaces & APIs"]
-        WEB["Web Dashboard (Live Spectrogram & TTS Controls)"]
-        CLI["Serial CLI (audio status, say, cmd, kws)"]
-        PY["MicroPython (tamimystic.audio.*)"]
-        REST["HTTP REST API (/api/audio/*)"]
-    end
+### I2S Physical Pin Mappings:
+- **`I2S_BCLK`**: Bit Clock (Default: **GPIO 41**)
+- **`I2S_WS`**: Word Select / LRCLK (Default: **GPIO 42**)
+- **`I2S_DIN`**: Digital Audio Input from Microphone (Default: **GPIO 39**)
+- **`I2S_DOUT`**: Digital Audio Output to Speaker Amplifier (Default: **GPIO 40**)
 
-    MIC --> I2S_DMA
-    I2S_DMA --> FEAT
-    FEAT --> KWS
-    KWS -->|Voice Command Dispatch| ROBOT
-    KWS -->|Cancel / Stop| SLAM
-    KWS -->|Spoken Response| SYNTH
-    SYNTH --> DAC
+---
 
-    FEAT <--> WEB
-    SYNTH <--> WEB
-    FEAT <--> CLI
-    FEAT <--> PY
-    FEAT <--> REST
+## Mel-Frequency Cepstral Coefficients (MFCC) Pipeline
+
+To convert raw 16 kHz acoustic waveforms into compact spectral representations for neural classification, the DSP engine processes continuous $32\text{ ms}$ windows ($512\text{ samples}$) with a $16\text{ ms}$ hop step ($256\text{ samples}$):
+
+$$\text{Raw PCM Frame } x[n] \xrightarrow{\text{Hamming Window}} w[n] \cdot x[n] \xrightarrow{\text{512-Point FFT}} |X[k]| \xrightarrow{\text{Mel Filterbank}} M[m] \xrightarrow{\text{Log + DCT}} \text{MFCC}[c]$$
+
+1. **Pre-Emphasis**: Boosts high frequencies ($y[n] = x[n] - 0.97 \cdot x[n-1]$).
+2. **Hamming Windowing**: Prevents spectral leakage:
+   $$w[n] = 0.54 - 0.46 \cdot \cos\left(\frac{2\pi n}{N - 1}\right)$$
+3. **512-Point Fast Fourier Transform (FFT)**: Computes power spectrum $|X(k)|^2$.
+4. **40 Triangular Mel-Scale Filterbanks**: Maps linear frequencies to non-linear human auditory scale:
+   $$m = 2595 \cdot \log_{10}\left(1 + \frac{f}{700}\right)$$
+5. **Discrete Cosine Transform (DCT-II)**: Compresses the log Mel energies into 13 to 20 MFCC coefficients per frame.
+
+---
+
+## Keyword Spotting (KWS) Neural Network
+
+The KWS classifier is a 1D Temporal Depthwise-Separable Convolutional Neural Network (1D-CNN) running on Core 1:
+
+| Command Phrase | Triggered Action | Confidence Threshold |
+|---|---|---|
+| **"Hey Mystic"** | System Wake-Word / Arm Audio Listening State | $0.85$ |
+| **"Forward"** | Drive Rover Forward ($v_x = 0.4\text{ m/s}$) | $0.80$ |
+| **"Backward"** | Drive Rover Reverse ($v_x = -0.3\text{ m/s}$) | $0.80$ |
+| **"Stop"** | Immediate Motion & Arm E-STOP | $0.75$ |
+| **"Turn Left"** | Rotate Left ($\omega_z = +1.0\text{ rad/s}$) | $0.80$ |
+| **"Turn Right"** | Rotate Right ($\omega_z = -1.0\text{ rad/s}$) | $0.80$ |
+| **"Pick Object"** | Execute 6-DOF Gripper Grab Trajectory | $0.85$ |
+| **"Status"** | Play Audio Battery and Network Diagnostic Summary | $0.80$ |
+
+---
+
+## Audio Voice Feedback Synthesizer
+
+Tamimystic OS can playback pre-recorded WAV voice alerts stored in the LittleFS Virtual File System:
+
+```bash
+# Play audio file from LittleFS
+tamimystic> audio play /storage/audio/startup.wav
 ```
 
 ---
 
-## Supported Hardware and Default Pinout
-
-Tamimystic OS interfaces with standard I2S digital audio hardware:
-
-| Peripheral | Chip Model | Interface | ESP32-S3 GPIO | Function Description |
-|---|---|---|---|---|
-| **I2S Bit Clock** | All I2S Transceivers | Clock | **GPIO 41** | Synchronizes bit data transfer. |
-| **I2S Word Select (WS/LRCK)** | All I2S Transceivers | Clock | **GPIO 42** | Left/Right channel framing (16 kHz). |
-| **Digital Microphone** | INMP441 / SPH0645 | Serial Data In (DIN) | **GPIO 40** | Digital MEMS audio capture. |
-| **I2S DAC Amplifier** | MAX98357A / PCM5102 | Serial Data Out (DOUT) | **GPIO 39** | 3.2W Class-D mono audio output. |
-
-> All I2S pin allocations can be dynamically reassigned via the Dynamic Pin Matrix without recompiling the firmware.
-
----
-
-## Keyword Spotting (KWS) Vocabulary
-
-The on-device keyword classifier listens for pre-trained voice commands and executes immediate robotic actions:
-
-| Voice Command | Trigger Phrases | Executed Action | Spoken Confirmation |
-|---|---|---|---|
-| **Wake-Up** | *"Hey Tamimystic"*, *"Wake Up"* | Activates high-attention mode | "Yes, I am listening." |
-| **Drive Forward** | *"Drive Forward"*, *"Forward"* | Commands rover linear speed $+40\%$ | "Driving forward." |
-| **Reverse** | *"Drive Backward"*, *"Reverse"* | Commands rover linear speed $-40\%$ | "Reversing rover." |
-| **Turn Left** | *"Turn Left"* | Commands angular speed $+35\%$ | "Turning left." |
-| **Turn Right** | *"Turn Right"* | Commands angular speed $-35\%$ | "Turning right." |
-| **Emergency Stop** | *"Stop"*, *"Halt"*, *"Brake"* | Immediate robot brake and navigation abort | "Emergency stop activated." |
-| **Arm Home** | *"Arm Home"*, *"Reset Arm"* | Sets 6-DOF robotic arm to home pose | "Resetting robotic arm to home pose." |
-| **Grab Object** | *"Grab Object"*, *"Pick Up"* | Executes gripper grasp sequence | "Closing robotic gripper to grab object." |
-| **Status Report** | *"Status Report"*, *"Report"* | Audits battery and navigation state | "All systems nominal. Ready for navigation." |
-
----
-
-## Formant Speech Synthesis & Sound Generation
-
-Tamimystic OS incorporates a lightweight formant speech synthesizer and algorithmic tone generator:
-
-1. **Carrier Envelope Shaping**: Uses attack/decay envelopes on sine waves and harmonic carriers to prevent acoustic clicks.
-2. **Pre-Programmed Chimes**:
-   - **Pattern 1 (Boot Chime)**: C5 (523 Hz) $\rightarrow$ E5 (659 Hz) $\rightarrow$ G5 (784 Hz) ascending major triad.
-   - **Pattern 2 (Obstacle Warning)**: Dual 880 Hz pulses.
-   - **Pattern 3 (Command Acknowledged)**: High 1046 Hz chirp.
-   - **Pattern 4 (Emergency Alarm)**: Low 220 Hz warning buzzer.
-
----
-
-## Web Dashboard Audio Control
-
-The Web Dashboard features a real-time Audio Control Card:
-
-1. Open `http://<device-ip>/` in your browser.
-2. Locate the **Audio Edge AI & Voice Synthesis** card:
-   - **Live Spectrogram Canvas**: Visualizes real-time microphone decibel levels and audio waveform.
-   - **Voice Keyword Simulator**: Test keywords with single-click triggers.
-   - **Text-to-Speech (TTS) Engine**: Enter arbitrary text phrases to synthesize voice responses on the connected speaker.
-   - **Volume Slider**: Adjust master playback volume dynamically.
-
----
-
-## Python API Reference
-
-Control audio synthesis and keyword spotting in MicroPython scripts:
+## MicroPython Audio API
 
 ```python
 import tamimystic
+import time
 
-# Speak a custom sentence
-tamimystic.audio.say("Obstacle detected. Planning alternate route.")
+# Start continuous keyword spotting listening task
+tamimystic.audio.start_kws()
 
-# Play an alert tone (frequency in Hz, duration in ms)
-tamimystic.audio.tone(880, 200)
+# Play audio alert through I2S speaker
+tamimystic.audio.play_wav("/storage/audio/ready.wav")
 
-# Play pre-programmed sound pattern (1 to 4)
-tamimystic.audio.beep(3)
+print("Voice control engine listening for 'Hey Mystic'...")
 
-# Set master speaker volume (0 to 100%)
-tamimystic.audio.volume(85)
+while True:
+    keyword = tamimystic.audio.get_last_keyword()
+    if keyword:
+        print(f"Detected Voice Command: {keyword['command']} (Score: {keyword['score']:.2f})")
+        if keyword['command'] == "forward":
+            tamimystic.motion.drive(0.4, 0.0)
+        elif keyword['command'] == "stop":
+            tamimystic.motion.stop()
+    time.sleep(0.05)
 ```
 
 ---
 
-## Serial CLI Commands
+## Serial CLI and REST API Reference
 
-Manage the audio subsystem directly from the serial shell:
-
+### Serial CLI:
 ```bash
-# View audio subsystem status, energy level, volume, and last command
-aeron> audio status
+# Start voice keyword spotting daemon
+tamimystic> audio kws start
 
-# Synthesize and speak a phrase
-aeron> audio say Robot initialized and ready for deployment
+# Stop audio engine
+tamimystic> audio kws stop
 
-# Play a test tone (880 Hz for 250 ms)
-aeron> audio tone 880 250
+# Play a test tone (frequency in Hz, duration in ms)
+tamimystic> audio tone 1000 500
 
-# Play a sound pattern (1=Boot, 2=Warning, 3=Chirp, 4=Alarm)
-aeron> audio beep 1
-
-# Trigger a voice command manually
-aeron> audio cmd forward
-
-# Adjust master volume (0-100)
-aeron> audio vol 90
-
-# Toggle keyword spotting on or off
-aeron> audio kws on
+# Query audio DSP status
+tamimystic> audio status
 ```
 
----
+### HTTP REST API:
+```bash
+# Start KWS
+POST /api/audio/kws/start
 
-## REST API Endpoints
+# Play audio file
+POST /api/audio/play?file=/storage/audio/alert.wav
 
-| Endpoint | Method | Parameters | Response Description |
-|---|---|---|---|
-| `/api/audio/status` | `GET` | None | JSON object with KWS state, last command, volume, and energy dB. |
-| `/api/audio/waveform` | `GET` | None | Array of 32 live waveform magnitude values for web visualizers. |
-| `/api/audio/say` | `POST` / `GET` | `text=<string>` | Synthesizes and speaks the given text string. |
-| `/api/audio/tone` | `POST` / `GET` | `freq=<int>&dur=<int>` | Plays a pure sine tone at specified frequency and duration. |
-| `/api/audio/beep` | `POST` / `GET` | `pattern=<1-4>` | Plays pre-programmed sound patterns. |
-| `/api/audio/kws` | `POST` / `GET` | `enable=<0\|1>` | Enables or disables the on-device keyword spotter. |
-| `/api/audio/cmd` | `POST` / `GET` | `cmd=<string>` | Injects and executes a named voice command. |
-| `/api/audio/volume` | `POST` / `GET` | `vol=<0-100>` | Sets master speaker volume. |
+# Query audio recognition state
+GET /api/audio/status
+```

@@ -1,104 +1,215 @@
-# Wheeled Kinematics: Differential and Mecanum 4WD
+# Mobile Rover Kinematics and Odometry
 
-This guide explains the mathematics, control theory, and practical programming of wheeled mobile robots in Tamimystic OS.
-
----
-
-## 1. Differential Drive Kinematics (2WD / 4WD Rover)
-
-A differential drive robot consists of two independently driven wheels with a shared wheelbase $L$.
-
-```text
-       [Left Wheel: v_L]
-           |---------|
-                |
-                +-----> Linear Velocity: v_x
-                |       Angular Velocity: omega
-           |---------|
-       [Right Wheel: v_R]
-              <-- L -->
-```
-
-### Mathematical Equations
-Given a commanded linear speed $v_x \in [-100, 100]\%$ and angular turning rate $\omega \in [-100, 100]\%$:
-
-$$v_L = v_x - \frac{\omega \cdot L}{2}, \quad v_R = v_x + \frac{\omega \cdot L}{2}$$
-
-### Practical Example
-* **Drive straight at 70%**: $v_x = 70, \omega = 0 \implies v_L = 70\%, v_R = 70\%$
-* **Pivot right in place**: $v_x = 0, \omega = 50 \implies v_L = -50\%, v_R = 50\%$
-* **Smooth gentle left curve**: $v_x = 60, \omega = -20 \implies v_L = 40\%, v_R = 80\%$
-
-```bash
-# Set mode to differential
-aeron> robot mode diff
-
-# Command straight motion
-aeron> robot move 70 0
-
-# Command spin turn
-aeron> robot move 0 50
-```
+Tamimystic OS incorporates a deterministic kinematic transformation library capable of mapping high-level velocity commands ($\vec{v} = [v_x, v_y, \omega_z]^T$) into discrete wheel angular velocities and integrating real-time encoder pulses into high-precision Cartesian odometry poses.
 
 ---
 
-## 2. Mecanum 4WD Kinematics (Omnidirectional / Holonomic)
+## 1. Differential Drive Kinematics
 
-Mecanum wheels have passive rollers oriented at a $45^\circ$ angle along their circumference. This allows the robot to move in **any direction instantly without turning** (strafing sideways, diagonal motion, and rotating simultaneously).
+Differential drive is the foundational non-holonomic mobile robotics configuration consisting of two independently driven coaxial wheels of radius $r$ separated by track baseline distance $L$.
 
-```text
-       [FL: 45° \\] ------------- [FR: 45° //]
-            |                            |
-            |       ^ v_x (Forward)      |
-            |       |                    |
-            |   <---+---> v_y (Strafe)   |
-            |       |                    |
-            |      ( ) omega (Turn)      |
-            |                            |
-       [RL: 45° //] ------------- [RR: 45° \\]
+```
+                    ^ v_x (Forward)
+                    |
+              +-----------+
+      Wheel L |   ROBOT   | Wheel R
+       [---]  |   CHASSIS |  [---]
+       (w_L)  +-----------+  (w_R)
+              <-----L----->
 ```
 
-### Mathematical Equations
-For a commanded 3-DOF twist vector $(v_x, v_y, \omega)$:
+### Inverse Kinematics (Target Twist to Wheel Velocities)
+Given a target linear forward velocity $v_x$ (m/s) and angular rotational velocity $\omega_z$ (rad/s):
 
-$$\begin{aligned}
-v_{FL} &= v_x - v_y - \omega \cdot \frac{L_x + L_y}{2} \\
-v_{FR} &= v_x + v_y + \omega \cdot \frac{L_x + L_y}{2} \\
-v_{RL} &= v_x + v_y - \omega \cdot \frac{L_x + L_y}{2} \\
-v_{RR} &= v_x - v_y + \omega \cdot \frac{L_x + L_y}{2}
-\end{aligned}$$
+$$\omega_L = \frac{v_x - \frac{L}{2} \cdot \omega_z}{r}$$
 
-### Control Modes in Mecanum
-1. **Pure Forward/Reverse**: $v_x = \pm 80, v_y = 0, \omega = 0 \implies$ all 4 wheels rotate in same direction.
-2. **Pure Sideways Strafe (Right)**: $v_x = 0, v_y = 60, \omega = 0 \implies FL = -60, FR = +60, RL = +60, RR = -60$.
-3. **Diagonal Traversal ($45^\circ$)**: $v_x = 50, v_y = 50, \omega = 0 \implies FL = 0, FR = 100, RL = 100, RR = 0$.
-4. **Spin on Axis**: $v_x = 0, v_y = 0, \omega = 40 \implies$ Left wheels reverse, Right wheels forward.
+$$\omega_R = \frac{v_x + \frac{L}{2} \cdot \omega_z}{r}$$
 
-```bash
-# Switch to Mecanum mode
-aeron> robot mode mecanum
+Where:
+- $\omega_L, \omega_R$ are left and right wheel angular velocities in $\text{rad/s}$.
+- $r$ is wheel radius in meters (default $0.0325\text{ m}$ for 65mm wheels).
+- $L$ is wheelbase separation distance in meters (default $0.145\text{ m}$).
 
-# Strafe pure right at 60%
-aeron> robot strafe 0 60 0
+### Forward Kinematics (Wheel Speeds to Robot Twist)
+Given measured left and right wheel angular velocities $\omega_L$ and $\omega_R$:
 
-# Move diagonally forward-left at 50%
-aeron> robot strafe 50 -50 0
+$$v_x = \frac{r \cdot (\omega_R + \omega_L)}{2}$$
 
-# Full holonomic maneuver: Drive forward 40% while strafing right 30% and turning 15%
-aeron> robot strafe 40 30 15
-```
+$$\omega_z = \frac{r \cdot (\omega_R - \omega_L)}{L}$$
 
 ---
 
-## Python Code Example
+## 2. Mecanum Omnidirectional Holonomic Kinematics
+
+Mecanum wheels feature passive rollers angled at $45^\circ$ relative to the wheel circumference. By adjusting individual wheel speeds, the robot can achieve holonomic omnidirectional translation in any planar direction ($v_x, v_y$) while simultaneously rotating ($\omega_z$).
+
+```
+             +-----------------------+
+      W1 (FL)| //                 \\ | W2 (FR)
+             |                       |
+             |       (v_x, v_y)      |
+             |           (+)         |
+             |                       |
+      W3 (RL)| \\                 // | W4 (RR)
+             +-----------------------+
+             <-----------2a---------->
+             ^                       ^
+             |-----------2b----------|
+```
+
+Where:
+- $a = \frac{L_x}{2}$ is half the longitudinal wheelbase length.
+- $b = \frac{L_y}{2}$ is half the lateral track width.
+- $r$ is wheel radius.
+
+### Mecanum Inverse Kinematics Matrix:
+$$\begin{bmatrix} \omega_1 \\ \omega_2 \\ \omega_3 \\ \omega_4 \end{bmatrix} = \frac{1}{r} \begin{bmatrix} 1 & -1 & -(a + b) \\ 1 & 1 & (a + b) \\ 1 & 1 & -(a + b) \\ 1 & -1 & (a + b) \end{bmatrix} \begin{bmatrix} v_x \\ v_y \\ \omega_z \end{bmatrix}$$
+
+Expanding into individual wheel scalar equations:
+$$\omega_{\text{FL}} = \frac{1}{r} \cdot \left(v_x - v_y - (a + b)\cdot \omega_z\right)$$
+
+$$\omega_{\text{FR}} = \frac{1}{r} \cdot \left(v_x + v_y + (a + b)\cdot \omega_z\right)$$
+
+$$\omega_{\text{RL}} = \frac{1}{r} \cdot \left(v_x + v_y - (a + b)\cdot \omega_z\right)$$
+
+$$\omega_{\text{RR}} = \frac{1}{r} \cdot \left(v_x - v_y + (a + b)\cdot \omega_z\right)$$
+
+---
+
+## 3. Ackermann Steering Geometry (Car-like Vehicles)
+
+For high-speed automotive rover chassis, Tamimystic OS implements pure Ackermann steering geometry to ensure all four wheels trace concentric arcs around a single Instantaneous Center of Rotation (ICR), eliminating tire scrub.
+
+```
+                   ICR (Instantaneous Center of Rotation)
+                    *
+                   / \
+                  /   \
+                 /  R  \
+                /       \
+               /         \
+        [---] /           \ [---]  Front Steered Wheels
+        (\delta_i)       (\delta_o)
+              +-----------+
+              |           |
+              |     L     | Wheelbase
+              |           |
+              +-----------+
+        [---]               [---]  Rear Drive Wheels
+              <-----W-----> Track
+```
+
+### Steering Angle Equations:
+$$\tan(\delta_i) = \frac{L}{R - \frac{W}{2}}$$
+
+$$\tan(\delta_o) = \frac{L}{R + \frac{W}{2}}$$
+
+$$\cot(\delta_o) - \cot(\delta_i) = \frac{W}{L}$$
+
+Where:
+- $\delta_i, \delta_o$ are inner and outer front wheel steering angles.
+- $L$ is longitudinal wheelbase.
+- $W$ is lateral track width.
+- $R$ is turn radius from the vehicle centerline to ICR.
+
+---
+
+## 4. Real-Time Odometry Dead Reckoning
+
+The motion engine integrates quadrature encoder ticks at 1000 Hz using 2nd-order Runge-Kutta / Midpoint integration to update global robot pose $(x, y, \theta)$:
+
+### Discrete-Time Pose Update Equations:
+Given encoder tick delta counts $\Delta N_L$ and $\Delta N_R$ over time step $\Delta t$:
+
+$$\Delta d_L = \frac{2\pi \cdot r \cdot \Delta N_L}{\text{CPR}}$$
+
+$$\Delta d_R = \frac{2\pi \cdot r \cdot \Delta N_R}{\text{CPR}}$$
+
+$$\Delta d = \frac{\Delta d_R + \Delta d_L}{2}$$
+
+$$\Delta \theta = \frac{\Delta d_R - \Delta d_L}{L}$$
+
+Midpoint orientation angle $\theta_{\text{mid}} = \theta_k + \frac{\Delta \theta}{2}$.
+
+Global Cartesian coordinates at step $k+1$:
+$$x_{k+1} = x_k + \Delta d \cdot \cos\left(\theta_{\text{mid}}\right)$$
+
+$$y_{k+1} = y_k + \Delta d \cdot \sin\left(\theta_{\text{mid}}\right)$$
+
+$$\theta_{k+1} = \text{atan2}\left(\sin(\theta_k + \Delta \theta), \cos(\theta_k + \Delta \theta)\right)$$
+
+> [!NOTE]
+> Angle normalization using `atan2(sin, cos)` ensures heading $\theta$ remains bound strictly in the range $[-\pi, +\pi]$ radians without unbounded accumulator wrap-around errors.
+
+---
+
+## 5. Velocity Profiling & S-Curve Clamping
+
+To prevent wheel slippage and motor current surges, target velocity setpoints undergo trapezoidal acceleration limiting:
+
+$$v_{\text{cmd}}(t + \Delta t) = \text{clamp}\left(v_{\text{target}}, v_{\text{cmd}}(t) - a_{\max}\Delta t, v_{\text{cmd}}(t) + a_{\max}\Delta t\right)$$
+
+Where $a_{\max}$ is the user-configured linear acceleration limit (default $1.5\text{ m/s}^2$).
+
+---
+
+## MicroPython Motion API
 
 ```python
 import tamimystic
+import time
 
-# 1. Drive forward
-tamimystic.robot.move(linear_speed=60, angular_speed=0)
-tamimystic.delay(1500)
+# Set chassis kinematic model: 'diff', 'mecanum', 'ackermann', 'skid'
+tamimystic.motion.set_type("diff")
 
-# 2. Stop
-tamimystic.robot.stop()
+# Set physical dimensions (Wheel Radius: 0.033m, Track: 0.150m)
+tamimystic.motion.set_geometry(wheel_radius=0.033, track_width=0.150)
+
+# Set acceleration limit (1.2 m/s^2)
+tamimystic.motion.set_accel_limit(1.2)
+
+# Drive forward at 0.4 m/s with 0.0 rad/s angular
+tamimystic.motion.drive(0.4, 0.0)
+time.sleep(2.0)
+
+# Read live odometry pose
+pose = tamimystic.motion.get_pose()
+print(f"Robot Position -> X: {pose['x']:.3f} m, Y: {pose['y']:.3f} m, Theta: {pose['theta']:.2f} rad")
+
+# Reset odometry to origin (0, 0, 0)
+tamimystic.motion.reset_odometry()
+```
+
+---
+
+## Serial CLI and REST API Reference
+
+### Serial CLI:
+```bash
+# Set chassis type
+tamimystic> motion type diff
+
+# Drive rover (linear m/s, angular rad/s)
+tamimystic> motion drive 0.5 0.1
+
+# Holonomic drive (vx, vy, omega)
+tamimystic> motion holonomic 0.3 -0.2 0.0
+
+# Query current odometry
+tamimystic> motion odom
+
+# Reset odometry
+tamimystic> motion odom_reset
+```
+
+### HTTP REST API:
+```bash
+# Standard drive command
+POST /api/motion/drive?linear=0.5&angular=0.1
+
+# Holonomic mecanum drive command
+POST /api/motion/holonomic?vx=0.3&vy=-0.2&omega=0.0
+
+# Fetch live odometry
+GET /api/motion/odom
 ```

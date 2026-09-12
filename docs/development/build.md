@@ -1,76 +1,119 @@
-# Building from Source (ESP32-S3 and PC Simulation)
+# Building Tamimystic OS from Source
 
-Tamimystic OS features a dual-target architecture that can be compiled natively on a PC (Windows / Linux / macOS) for rapid simulation, or cross-compiled with ESP-IDF for physical ESP32-S3-N16R8 hardware.
+Tamimystic OS is architected for dual-target compilation:
+1. **Target Hardware (ESP32-S3-N16R8)**: Cross-compiled via the Espressif ESP-IDF v5.2+ toolchain with full hardware driver integration and SIMD vector acceleration.
+2. **Native Desktop Simulator (PC - Windows / Linux / macOS)**: Compiled via native GCC / Clang / MSVC to simulate sensor auto-discovery, kinematics, SLAM, and Web APIs directly on your workstation without physical hardware.
 
 ---
 
-## Target 1: Cross-Compiling for ESP32-S3 Hardware
+## 1. Building for Target Hardware (ESP32-S3)
 
-### Prerequisites:
-1. **ESP-IDF v5.2 or higher** installed and configured in your environment.
-2. CMake 3.16+ and Ninja build system.
+### Step 1: Install ESP-IDF v5.2 Toolchain
+Follow the official [Espressif ESP-IDF Installation Guide](https://docs.espressif.com/projects/esp-idf/en/v5.2.1/esp32s3/get-started/) to install ESP-IDF v5.2 LTS.
 
-### Build Steps:
+Activate the environment variables in your terminal:
 ```bash
-# 1. Clone the repository
+# On Linux / macOS:
+. $HOME/esp/esp-idf/export.sh
+
+# On Windows (PowerShell):
+. $HOME/esp/esp-idf/export.ps1
+```
+
+### Step 2: Clone the Repository
+```bash
 git clone https://github.com/tamimystic/tamimystic-os.git
 cd tamimystic-os
+```
 
-# 2. Set target to ESP32-S3
+### Step 3: Set Hardware Target
+```bash
 idf.py set-target esp32s3
+```
 
-# 3. Build firmware
+### Step 4: Build Firmware Binary Suite
+```bash
 idf.py build
-
-# 4. Flash to ESP32-S3 and open serial monitor
-idf.py -p COM3 flash monitor
 ```
+
+The build system invokes CMake and Ninja to compile all kernel components with strict `-Wall -Werror=all` flags. Output binaries are generated in the `build/` directory:
+- `build/bootloader/bootloader.bin`
+- `build/partition_table/partition-table.bin`
+- `build/ota_data_initial.bin`
+- `build/tamimystic-os.bin`
+
+### Step 5: Flash and Open Serial Monitor
+```bash
+# Flash at 921600 baud and launch serial monitor
+idf.py -p COM4 -b 921600 flash monitor
+```
+
+To exit the serial monitor, press `Ctrl + ]`.
 
 ---
 
-## Target 2: Native PC Simulation Build (Windows / Linux)
+## Key Hardware Configuration Flags (`sdkconfig.defaults`)
 
-The Native Simulation build compiles the complete operating system, FreeRTOS task simulation, event bus, kinematics math, neural models, LittleFS VFS, serial CLI, and local web server using your standard host C++17 compiler (GCC / MinGW / Clang / MSVC).
+The project relies on specific hardware configurations optimized for the ESP32-S3-N16R8:
 
-### On Windows (MinGW):
-```bash
-mkdir build && cd build
-cmake -G "MinGW Makefiles" ..
-cmake --build .
-./tamimystic_os_sim.exe
-```
-
-### On Linux / macOS (GCC / Clang):
-```bash
-mkdir build && cd build
-cmake ..
-make -j4
-./tamimystic_os_sim
-```
+| Configuration Variable | Value | Purpose |
+|---|---|---|
+| `CONFIG_ESP32S3_SPIRAM_SUPPORT` | `y` | Enables external SPI PSRAM support. |
+| `CONFIG_SPIRAM_MODE_OCT` | `y` | Configures 8-line Octal SPI high-speed PSRAM mode. |
+| `CONFIG_SPIRAM_SPEED_80M` | `y` | Sets PSRAM clock frequency to 80 MHz. |
+| `CONFIG_SPIRAM_USE_MALLOC` | `y` | Allows dynamic allocations $> 4\text{ KB}$ to automatically route to PSRAM. |
+| `CONFIG_FREERTOS_HZ` | `1000` | Sets FreeRTOS tick rate to 1000 Hz ($1\text{ ms}$) for deterministic control. |
+| `CONFIG_COMPILER_OPTIMIZATION_PERF` | `y` | Enables `-O2` compiler optimization for high SIMD throughput. |
 
 ---
 
-## Repository Directory Structure
+## 2. Building the Native Desktop Simulator (PC Environment)
 
-```text
-tamimystic-os/
-├── components/
-│   ├── os_hal/          # Universal Hardware Abstraction Layer (GPIO, PWM, I2C, UART)
-│   ├── os_core/         # Thread-safe Event Bus and System Dispatcher
-│   ├── os_scheduler/    # FreeRTOS Dual-Core Task Scheduler and Native POSIX Thread Pool
-│   ├── os_config/       # NVS Persistent Key-Value Configuration Store
-│   ├── os_pnp/          # Plug and Play I2C Auto-Discovery Registry and Dynamic Pin Matrix
-│   ├── os_robotics/     # Kinematics Engine (2WD, Mecanum, 6-DOF IK/FK, PCA9685)
-│   ├── os_ai/           # DVP Camera Driver and TensorFlow Lite Micro SIMD Inference
-│   ├── os_storage/      # LittleFS 6.8MB Flash Virtual File System (VFS)
-│   ├── os_apps/         # MicroPython and WASM Dynamic Scripting Runners
-│   ├── os_cli/          # Serial Interactive Terminal Shell (aeron>)
-│   ├── os_network/      # Wi-Fi Station and Captive Network Manager
-│   └── os_web/          # Asynchronous HTTP Web Server and Web Dashboard
-├── docs/                # Material for MkDocs Documentation Markdown Files
-├── main/                # System Boot Bring-up Entrypoint (app_main / main)
-├── partitions.csv       # 16MB Flash Partition Table (Dual OTA + LittleFS)
-├── sdkconfig.defaults   # Hardware configuration defaults for ESP32-S3-N16R8
-├── mkdocs.yml           # Material for MkDocs Configuration
-└── CMakeLists.txt       # Unified Dual-Target CMake Build Script
+The native simulator allows rapid algorithm development, automated unit testing, and UI preview without requiring an ESP32 board.
+
+### Building on Windows (MinGW / Make):
+```powershell
+# Create build directory and generate Makefiles
+cmake -B build -G "MinGW Makefiles"
+
+# Compile simulator executable
+cmake --build build -j8
+
+# Run Simulator
+.\build\tamimystic_os_sim.exe
+```
+
+### Building on Linux / macOS (GCC / Clang):
+```bash
+# Generate build files
+cmake -B build
+
+# Compile simulator binary
+cmake --build build -j$(nproc)
+
+# Run Simulator
+./build/tamimystic_os_sim
+```
+
+### Simulator Features:
+- **Simulated I2C Bus**: Emulates MPU-6050, VL53L0X, and BME280 sensor data.
+- **Simulated Kinematics Rover**: Simulates motor encoders and updates Cartesian odometry in real time.
+- **Simulated 2D LiDAR**: Synthesizes a virtual $4\text{m} \times 4\text{m}$ room with obstacles for testing SLAM and $A^*$ path planning.
+- **Local HTTP Web Server**: Starts the Web Dashboard at `http://localhost:8080`.
+
+---
+
+## 3. Flash Memory and Static Analysis Profiling
+
+To inspect memory consumption and ensure internal SRAM buffers remain within bounds:
+
+```bash
+# Display overall partition and RAM memory usage
+idf.py size
+
+# Display component-by-component memory breakdown
+idf.py size-components
+
+# Display detailed per-symbol memory map
+idf.py size-files
 ```

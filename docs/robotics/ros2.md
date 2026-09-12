@@ -1,154 +1,162 @@
-# micro-ROS and ROS 2 Distributed Robotics
+# ROS 2 and micro-ROS Integration
 
-Tamimystic OS provides a native **micro-ROS (Micro XRCE-DDS)** client implementation running directly on the ESP32-S3 (or Native PC Simulator), enabling seamless bidirectional integration with ROS 2 (Robot Operating System) distributions including **Humble, Iron, and Jazzy**.
+Tamimystic OS features native, first-class integration with the **Robot Operating System 2 (ROS 2)** ecosystem through embedded **micro-ROS**. This allows the ESP32-S3 to function as a full-fledged ROS 2 node communicating seamlessly with ROS 2 Jazzy, Iron, and Humble installations.
 
 ---
 
-## Architecture Overview
+## Architectural Overview & XRCE-DDS Middleware
+
+micro-ROS implements the **eProsima Micro XRCE-DDS** (eXtremely Resource Constrained Environments DDS) client-agent protocol. The ESP32-S3 runs the lightweight micro-ROS Client, which communicates with a host computer running the `micro_ros_agent`:
 
 ```mermaid
 graph LR
-    subgraph Host["Host PC / SBC (Raspberry Pi / Jetson)"]
-        ROS2["ROS 2 Humble / Iron Graph (RViz2, Nav2, MoveIt2)"]
-        AGENT["micro-ROS Agent (UDP Port 8888)"]
-        ROS2 <--> AGENT
+    subgraph ESP32Target["Tamimystic OS (ESP32-S3)"]
+        Sensors["IMU / LiDAR / Encoders"] --> Node["micro-ROS Node (/tamimystic_robot)"]
+        Motors["1000Hz Motion Controller"] <-- Node
+        Arm["6-DOF Arm Kinematics"] <-- Node
     end
 
-    subgraph ESP32["Tamimystic OS (ESP32-S3-N16R8)"]
-        CLIENT["micro-ROS DDS Client (Core 0 @ 30Hz)"]
-        KIN["Universal Kinematics Engine (Core 1 @ 50Hz)"]
-        SENS["Sensors (IMU, ToF, Camera)"]
-        
-        CLIENT -->|/cmd_vel| KIN
-        KIN -->|/odom, /joint_states| CLIENT
-        SENS -->|/imu/data, /scan, /camera| CLIENT
+    subgraph TransportLayer["Transport Layer (UDP / Wi-Fi or Serial)"]
+        Node <-->|eProsima Micro XRCE-DDS UDP:8888| Agent["micro_ros_agent (Docker / Host PC)"]
     end
 
-    AGENT <== "Wi-Fi (UDP 8888) / Serial" ==> CLIENT
+    subgraph HostROS2["Host Computer (ROS 2 Jazzy / Iron / Humble)"]
+        Agent <--> DDS["Standard DDS Network (CycloneDDS / FastDDS)"]
+        DDS <--> RViz["RViz2 Visualization"]
+        DDS <--> Nav2["Nav2 Navigation Stack"]
+        DDS <--> MoveIt["MoveIt 2 Manipulation"]
+        DDS <--> Teleop["teleop_twist_keyboard"]
+    end
 ```
-
-* **Zero Middleware Overhead**: The micro-ROS client communicates directly with the `micro-ros-agent` using standard DDS protocols without requiring a heavy bridge.
-* **Core 0 Pinned**: The ROS 2 DDS executor task runs on Core 0, leaving Core 1 exclusively dedicated to 50Hz real-time kinematics and Edge AI neural inference.
-* **Non-Blocking Fallback**: If the micro-ROS agent is offline or loses connection, the OS continues running autonomously with manual web/joystick controls.
 
 ---
 
-## Standard ROS 2 Topics
+## Published and Subscribed ROS 2 Topics
 
-| Topic Name | Message Type | Role | Rate | Description |
+### Subscribed Topics (Commands to Robot)
+
+| Topic Name | Message Type | QoS Profile | Description |
+|---|---|---|---|
+| `/cmd_vel` | `geometry_msgs/msg/Twist` | Default (Reliable) | Mobile base linear and angular velocity commands ($v_x, v_y, \omega_z$). |
+| `/arm_cmd` | `std_msgs/msg/Float32MultiArray` | Reliable | Target joint angles ($\theta_1 \dots \theta_6$) in degrees for 6-DOF robotic arm. |
+| `/gripper_cmd` | `std_msgs/msg/Int32` | Reliable | Gripper claw open/close percentage ($0 - 100\%$). |
+| `/reset_odom` | `std_msgs/msg/Empty` | Reliable | Resets Cartesian odometry coordinates to origin $(0, 0, 0)$. |
+
+### Published Topics (Telemetry & Sensor Feeds)
+
+| Topic Name | Message Type | Rate (Hz) | QoS Profile | Description |
 |---|---|---|---|---|
-| `/cmd_vel` | `geometry_msgs/msg/Twist` | Subscriber | 50 Hz | Inbound velocity commands routed directly to the Kinematics Engine. |
-| `/odom` | `nav_msgs/msg/Odometry` | Publisher | 30 Hz | Outbound dead-reckoning odometry and $(X, Y, \theta)$ position. |
-| `/joint_states` | `sensor_msgs/msg/JointState` | Publisher | 30 Hz | Live 6-DOF robotic arm joint angles ($J_1 - J_6$) in radians. |
-| `/imu/data` | `sensor_msgs/msg/Imu` | Publisher | 50 Hz | 6-axis accelerometer, gyroscope, and orientation quaternion from MPU-6050. |
-| `/scan` | `sensor_msgs/msg/LaserScan` | Publisher | 10 Hz | 360-degree distance range scan data. |
-| `/camera/image/compressed` | `sensor_msgs/msg/CompressedImage` | Publisher | 15 Hz | Live JPEG stream from the DVP camera for RViz visualization. |
+| `/odom` | `nav_msgs/msg/Odometry` | 50 Hz | Best Effort | Real-time Cartesian robot pose $(x, y, \theta)$ and covariance matrices. |
+| `/scan` | `sensor_msgs/msg/LaserScan` | 10 Hz | Best Effort | 2D LiDAR 360-degree planar range distance point array. |
+| `/imu/data_raw` | `sensor_msgs/msg/Imu` | 100 Hz | Best Effort | 6-DOF linear acceleration and angular velocity readings from MPU-6050. |
+| `/joint_states` | `sensor_msgs/msg/JointState` | 20 Hz | Best Effort | Live feedback of 6-DOF robotic arm joint positions and velocities. |
+| `/tf` | `tf2_msgs/msg/TFMessage` | 50 Hz | Best Effort | Coordinate frame transforms (`odom` $\to$ `base_link` $\to$ `laser_frame`). |
+| `/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | 1 Hz | Reliable | Free memory, CPU temperature, Wi-Fi RSSI, and battery voltage. |
 
 ---
 
-## Setting Up the micro-ROS Agent
+## Step-by-Step ROS 2 Agent Setup on Host PC
 
-To bridge Tamimystic OS with your ROS 2 environment, launch the official micro-ROS agent on your computer or SBC (Raspberry Pi, Jetson):
+### Step 1: Install and Run micro-ROS Agent via Docker
+The easiest and cleanest method to start the micro-ROS Agent on your ROS 2 host PC:
 
-### Using Docker (Recommended):
 ```bash
-# Run micro-ROS agent listening on UDP port 8888
-docker run -it --rm --net=host microros/micro-ros-agent:humble udp4 --port 8888 -v6
+# Pull and execute micro-ROS Agent container (UDP Transport on port 8888)
+docker run -it --rm --net=host microros/micro-ros-agent:jazzy udp4 --port 8888
 ```
 
-### Using Native ROS 2 Workspace:
+For serial UART connection via USB:
 ```bash
-# Source ROS 2 environment
-source /opt/ros/humble/setup.bash
-
-# Run the agent
-ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+docker run -it --rm --net=host --privileged -v /dev:/dev microros/micro-ros-agent:jazzy serial --dev /dev/ttyUSB0 -b 115200
 ```
 
----
+### Step 2: Configure micro-ROS on Tamimystic OS
 
-## Connecting Tamimystic OS to the Agent
-
-### Method 1: Via Web Dashboard
-1. Open `http://<device-ip>/` in your web browser.
-2. Scroll to the **micro-ROS and ROS 2 Node** card.
-3. Enter your Host PC IP address (e.g., `192.168.1.100`), Port `8888`, and Domain ID `0`.
-4. Click **Connect Agent**.
-5. The status badge will switch to **RUNNING**.
-
-### Method 2: Via Serial CLI
+#### Option A: Via Serial CLI
 ```bash
-# Connect to agent at 192.168.1.100 on port 8888, domain 0
-aeron> ros2 connect 192.168.1.100 8888 0
+# Configure Agent IP and Port
+tamimystic> ros2 config 192.168.1.100 8888
 
-# Check node status and active topic statistics
-aeron> ros2 status
+# Connect to the micro-ROS Agent
+tamimystic> ros2 start
+[ROS2] Connecting to micro-ROS Agent at 192.168.1.100:8888...
+[ROS2] Node '/tamimystic_robot' registered successfully!
+[ROS2] Publishers initialized: /odom, /scan, /imu/data_raw, /tf
+[ROS2] Subscribers initialized: /cmd_vel, /arm_cmd
+```
 
-# Disconnect from agent
-aeron> ros2 disconnect
+#### Option B: Via HTTP REST API
+```bash
+curl -X POST "http://192.168.4.1/api/ros2/config?agent_ip=192.168.1.100&port=8888"
+curl -X POST "http://192.168.4.1/api/ros2/start"
 ```
 
 ---
 
-## Interacting with the Robot from ROS 2
+## Verifying ROS 2 Communication on Host PC
 
-Once connected, open a terminal on your ROS 2 PC:
+Once the agent and client handshake completes, open a new terminal on your ROS 2 host machine:
 
-### 1. View Active Nodes and Topics
+### 1. List Active Nodes
 ```bash
-# List all active ROS 2 nodes
 ros2 node list
-# Output: /tamimystic_os_node
-
-# List active topics
-ros2 topic list
+# Output:
+# /tamimystic_robot
 ```
 
-### 2. Teleoperate Robot via Keyboard
+### 2. Echo Odometry Feed
 ```bash
-# Run standard ROS 2 teleop keyboard
+ros2 topic echo /odom
+# Output:
+# header:
+#   stamp: {sec: 1726131400, nanosec: 420000000}
+#   frame_id: "odom"
+# child_frame_id: "base_link"
+# pose:
+#   pose:
+#     position: {x: 0.452, y: 0.120, z: 0.0}
+#     orientation: {x: 0.0, y: 0.0, z: 0.382, w: 0.924}
+```
+
+### 3. Drive Robot with Keyboard Teleop
+```bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
-### 3. Echo Live Odometry & Telemetry
-```bash
-# View live odometry stream
-ros2 topic echo /odom
-
-# View live IMU data
-ros2 topic echo /imu/data
-
-# View 6-DOF robotic arm joint states
-ros2 topic echo /joint_states
-```
-
 ### 4. Visualize in RViz2
-Launch RViz2 to visualize the robot's coordinate frame (`odom` -> `base_link`), live camera image, and laser scans:
+Launch RViz2 to visualize real-time LiDAR point clouds and robot transforms:
 ```bash
-rviz2
+ros2 run rviz2 rviz2
 ```
-Add displays for:
-* **TF**: Shows live transformation tree.
-* **Odometry**: Target topic `/odom`.
-* **Image**: Target topic `/camera/image/compressed`.
-* **LaserScan**: Target topic `/scan`.
+1. Set Fixed Frame to `odom`.
+2. Add a **LaserScan** display subscribed to `/scan`.
+3. Add an **Odometry** display subscribed to `/odom`.
+4. Add a **TF** display to view coordinate frames.
 
 ---
 
-## Python Scripting with ROS 2
-
-You can also interact with the ROS 2 subsystem from within your onboard Python scripts:
+## ROS 2 Launch File Example (`tamimystic_bringup.launch.py`)
 
 ```python
-import tamimystic
+from launch import LaunchDescription
+from launch_ros.actions import Node
 
-# Check if ROS 2 DDS agent is connected
-if tamimystic.ros2.is_connected():
-    print("ROS 2 Agent is active!")
-    tamimystic.ros2.publish_log("Robot task started via Python runtime.")
-else:
-    print("ROS 2 Agent offline. Running in local standalone mode.")
-
-# Command movement
-tamimystic.robot.move(50, 0)
+def generate_launch_description():
+    return LaunchDescription([
+        # micro-ROS Agent Node
+        Node(
+            package='micro_ros_agent',
+            executable='micro_ros_agent',
+            name='micro_ros_agent',
+            output='screen',
+            arguments=['udp4', '--port', '8888']
+        ),
+        
+        # Robot State Publisher & Static Transform (laser_frame to base_link)
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments=['0.1', '0.0', '0.08', '0.0', '0.0', '0.0', 'base_link', 'laser_frame']
+        )
+    ])
 ```

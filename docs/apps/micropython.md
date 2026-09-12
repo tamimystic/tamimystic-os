@@ -1,109 +1,178 @@
-# MicroPython Runtime and Native OS API Reference
+# MicroPython Runtime and Standard Library
 
-Tamimystic OS embeds a lightweight MicroPython interpreter that enables users to write robot logic, automation scripts, and sensor loops in high-level Python with zero C++ compilation.
+Tamimystic OS embeds a custom **MicroPython Embedded Runtime Engine** (`os_apps`) that provides a high-level, sandboxed Python programming environment directly on the ESP32-S3. Through the native `tamimystic` C-extension module, developers can orchestrate complex multi-subsystem robotics behaviors using Python without recompiling firmware.
 
 ---
 
-## The `tamimystic` Native Module Reference
+## Runtime Architecture and Memory Sandboxing
 
-The `tamimystic` module exposes real-time bindings to the underlying C++ OS kernel.
+The MicroPython Virtual Machine runs as an isolated FreeRTOS task pinned to **Core 1**:
+
+```mermaid
+graph TD
+    subgraph MemoryHierarchy["Memory Architecture"]
+        PSRAMHeap["Dedicated 512 KB MicroPython Heap in 8 MB PSRAM"]
+        VFS["LittleFS Flash Virtual File System (/storage/main.py)"]
+    end
+
+    subgraph RuntimeEngine["MicroPython Runtime Engine (Core 1)"]
+        Parser["Bytecode Compiler & AST Parser"]
+        VM["Virtual Machine Bytecode Interpreter"]
+        GC["Garbage Collector (Automatic Mark & Sweep)"]
+    end
+
+    subgraph NativeBindings["C++ Native Module Bindings (tamimystic.*)"]
+        SysBind["tamimystic.system (CPU, Temp, Uptime)"]
+        PinBind["tamimystic.pin (Dynamic Pin Matrix)"]
+        MotionBind["tamimystic.motion (1000Hz Kinematics)"]
+        ArmBind["tamimystic.arm (6-DOF Inverse Kinematics)"]
+        SensorBind["tamimystic.sensor (PnP Discovery & IMU)"]
+        CameraBind["tamimystic.camera (DVP DMA Framebuffer)"]
+        AIBind["tamimystic.ai (MobileNet SIMD Classifier)"]
+        SLAMBind["tamimystic.slam (LiDAR Occupancy Grid)"]
+        SwarmBind["tamimystic.espnow (Mesh Transceiver)"]
+        AudioBind["tamimystic.audio (MFCC DSP & KWS Engine)"]
+    end
+
+    PSRAMHeap <--> VM
+    VFS --> Parser
+    Parser --> VM
+    VM <--> GC
+    VM <--> NativeBindings
+```
+
+---
+
+## Complete `tamimystic` Standard Library Reference
+
+### 1. `tamimystic.system` Module
+Provides access to core hardware metrics and power state:
+
+| Function | Return Type | Description |
+|---|---|---|
+| `tamimystic.system.get_uptime()` | `int` | System uptime in seconds since boot. |
+| `tamimystic.system.get_free_heap()` | `int` | Free internal SRAM memory in bytes. |
+| `tamimystic.system.get_free_psram()` | `int` | Free 8 MB Octal PSRAM memory in bytes. |
+| `tamimystic.system.get_cpu_temp()` | `float` | On-chip silicon temperature in degrees Celsius. |
+| `tamimystic.system.reboot()` | `None` | Triggers a clean software reboot of the SoC. |
+
+---
+
+### 2. `tamimystic.pin` Module
+Controls the Dynamic Software Pin Matrix:
+
+| Function | Parameters | Description |
+|---|---|---|
+| `tamimystic.pin.get(func_name)` | `str` | Returns the assigned GPIO number for an abstract function. |
+| `tamimystic.pin.set(func_name, gpio)` | `str, int` | Re-assigns an abstract function to a new GPIO and saves to NVS. |
+| `tamimystic.pin.is_safe(gpio)` | `int` | Returns `True` if GPIO is safe for user configuration. |
+| `tamimystic.pin.read(gpio)` | `int` | Reads digital input state (`0` or `1`). |
+| `tamimystic.pin.write(gpio, val)` | `int, int` | Writes digital output level (`0` or `1`). |
+| `tamimystic.pin.reset_defaults()` | `None` | Restores all pin mappings to factory defaults. |
+
+---
+
+### 3. `tamimystic.motion` Module
+Interfaces directly with the 1000 Hz motion control engine:
+
+| Function | Parameters | Description |
+|---|---|---|
+| `tamimystic.motion.set_type(type_str)` | `'diff'|'mecanum'|'ackermann'` | Configures the active chassis kinematics model. |
+| `tamimystic.motion.drive(linear, angular)` | `float, float` | Commands forward linear speed ($m/s$) and angular yaw ($rad/s$). |
+| `tamimystic.motion.drive_holonomic(vx, vy, omega)` | `float, float, float` | Commands 3-DOF holonomic translation for Mecanum chassis. |
+| `tamimystic.motion.stop()` | `None` | Instantly stops all drive motors. |
+| `tamimystic.motion.get_pose()` | `None` | Returns dictionary `{'x': float, 'y': float, 'theta': float}`. |
+| `tamimystic.motion.reset_odometry()` | `None` | Resets global Cartesian pose coordinates to $(0, 0, 0)$. |
+| `tamimystic.motion.set_pid(kp, ki, kd)` | `float, float, float` | Updates closed-loop velocity PID controller gains. |
+
+---
+
+### 4. `tamimystic.arm` Module
+Controls 6-DOF robotic manipulator inverse kinematics:
+
+| Function | Parameters | Description |
+|---|---|---|
+| `tamimystic.arm.move_to(x, y, z, pitch, roll, duration)` | `float, float, float, float, float, float` | Computes IK and moves end-effector to target coordinate ($mm$). |
+| `tamimystic.arm.set_joints(joint_list)` | `list[float]` | Directly sets joint angles ($\theta_1 \dots \theta_6$) in degrees. |
+| `tamimystic.arm.set_gripper(percent)` | `int (0-100)` | Opens/closes end-effector gripper claw. |
+| `tamimystic.arm.get_pose()` | `None` | Returns FK computed Cartesian position and orientation. |
+
+---
+
+### 5. `tamimystic.sensor` Module
+Queries plug-and-play I2C sensors and drives OLED displays:
+
+| Function | Return Type | Description |
+|---|---|---|
+| `tamimystic.sensor.scan()` | `list[str]` | Scans I2C bus and returns list of discovered sensor names. |
+| `tamimystic.sensor.get_imu()` | `dict` | Returns `{'roll': float, 'pitch': float, 'yaw': float, 'accel_z': float}`. |
+| `tamimystic.sensor.get_distance_mm()` | `int` | Returns Time-of-Flight laser distance measurement in millimeters. |
+| `tamimystic.sensor.get_environment()` | `dict` | Returns `{'temp_c': float, 'humidity_pct': float, 'pressure_hpa': float}`. |
+| `tamimystic.sensor.oled_print(x, y, text)` | `int, int, str` | Draws text onto SSD1306 OLED frame buffer. |
+| `tamimystic.sensor.oled_flush()` | `None` | Transfers OLED frame buffer to physical display. |
+
+---
+
+### 6. `tamimystic.ai` & `tamimystic.camera` Modules
+Controls DVP camera capture and INT8 neural network inference:
+
+| Function | Parameters | Description |
+|---|---|---|
+| `tamimystic.camera.init(res, fmt)` | `str, str` | Initializes DVP camera (`'QVGA'`, `'JPEG'`). |
+| `tamimystic.camera.capture()` | `None` | Returns raw binary frame bytes. |
+| `tamimystic.ai.load_model(name)` | `'mobilenet'|'person'` | Loads active quantized deep learning model. |
+| `tamimystic.ai.predict()` | `None` | Runs inference and returns `{'label': str, 'confidence': float, 'latency_ms': float}`. |
+
+---
+
+### 7. `tamimystic.espnow` Module
+Manages low-latency 2.4 GHz mesh swarm communication:
+
+| Function | Parameters | Description |
+|---|---|---|
+| `tamimystic.espnow.status()` | `None` | Returns radio state, channel, and packet statistics. |
+| `tamimystic.espnow.get_peers()` | `None` | Returns list of discovered swarm node MAC addresses. |
+| `tamimystic.espnow.broadcast(payload_str)` | `str` | Broadcasts string payload to all nearby nodes. |
+| `tamimystic.espnow.send_swarm_cmd(linear, angular)` | `float, float` | Transmits synchronized swarm formation velocity vector. |
+
+---
+
+## Complete Autonomous Mission Script Example
+
+Save this script as `/storage/main.py` using the Web IDE:
 
 ```python
 import tamimystic
-```
+import time
 
----
+print("Starting Tamimystic Autonomous Patrol Mission...")
 
-### 1. Robotics Control (`tamimystic.robot.*`)
+# Configure chassis
+tamimystic.motion.set_type("diff")
+tamimystic.ai.load_model("mobilenet")
 
-#### `tamimystic.robot.move(linear_speed, angular_speed)`
-Commands differential or holonomic linear movement.
-* `linear_speed`: Forward/Reverse speed in percent ($-100$ to $100$).
-* `angular_speed`: Turning rate in percent ($-100$ Left to $+100$ Right).
-
-```python
-# Drive forward at 60% speed
-tamimystic.robot.move(60, 0)
-```
-
-#### `tamimystic.robot.arm(j1, j2, j3, j4, j5, j6)`
-Directly sets the 6 joint angles of an articulated robotic arm.
-* `j1` (Base Yaw): $0^\circ - 180^\circ$
-* `j2` (Shoulder Pitch): $0^\circ - 180^\circ$
-* `j3` (Elbow Pitch): $0^\circ - 180^\circ$
-* `j4` (Wrist Pitch): $0^\circ - 180^\circ$
-* `j5` (Wrist Roll): $0^\circ - 180^\circ$
-* `j6` (Gripper Claw): $0\% - 100\%$
-
-```python
-# Set arm to ready pose
-tamimystic.robot.arm(90, 45, 90, 90, 90, 0)
-```
-
-#### `tamimystic.robot.ik(x, y, z)`
-Computes and applies the closed-form Inverse Kinematics solution for target Cartesian coordinates in centimeters.
-
-```python
-# Move arm tip to coordinate (15cm, 5cm, 10cm)
-tamimystic.robot.ik(15.0, 5.0, 10.0)
-```
-
-#### `tamimystic.robot.stop()`
-Engages the Emergency Stop, immediately halting all motors and servos.
-
-```python
-tamimystic.robot.stop()
-```
-
----
-
-### 2. Sensor Readings (`tamimystic.sensor.*`)
-
-#### `tamimystic.sensor.read_distance()`
-Returns the live distance in centimeters from the active VL53L0X Laser ToF or Ultrasonic sensor.
-
-```python
-dist = tamimystic.sensor.read_distance()
-print("Current obstacle distance:", dist, "cm")
-```
-
----
-
-### 3. Hardware GPIO Control (`tamimystic.gpio.*`)
-
-#### `tamimystic.gpio.write(pin, value)`
-Sets the digital state of any safe user GPIO pin.
-* `pin`: GPIO number (e.g., `48` for Status LED).
-* `value`: `1` (HIGH / 3.3V) or `0` (LOW / 0V).
-
-```python
-# Turn on status LED on GPIO 48
-tamimystic.gpio.write(48, 1)
-```
-
----
-
-### 4. Non-Blocking System Delay (`tamimystic.delay`)
-
-#### `tamimystic.delay(ms)`
-Yields execution to background FreeRTOS tasks (networking, AI, safety control loop) for the specified duration.
-
-```python
-# Sleep for 1.5 seconds
-tamimystic.delay(1500)
-```
-
----
-
-## CLI Python Commands
-
-```bash
-# Execute Python one-liner directly from serial CLI
-aeron> python eval "tamimystic.gpio.write(48, 1)"
-
-# Run a saved script from the 6.8MB Flash VFS
-aeron> python run "my_robot.py"
-
-# Stop currently executing Python script
-aeron> python stop
+# Mission Loop
+while True:
+    # 1. Read Distance Sensor
+    dist = tamimystic.sensor.get_distance_mm()
+    
+    if dist < 250:
+        # Obstacle detected -> Stop and run AI inspection
+        tamimystic.motion.stop()
+        print("Obstacle encountered! Inspecting with camera...")
+        
+        result = tamimystic.ai.predict()
+        print(f"Detected Object: {result['label']} (Confidence: {result['confidence']:.2f})")
+        
+        # Broadcast discovery to ESP-NOW swarm
+        tamimystic.espnow.broadcast(f"OBSTACLE:{result['label']}")
+        
+        # Turn away
+        tamimystic.motion.drive(0.0, 1.2)
+        time.sleep(1.0)
+    else:
+        # Clear path -> Move forward
+        tamimystic.motion.drive(0.35, 0.0)
+        
+    time.sleep(0.05)
 ```

@@ -1,55 +1,115 @@
 # Dual-Bank Over-The-Air (OTA) Firmware Updates
 
-Tamimystic OS incorporates a robust **Dual-Bank (A/B) OTA Update Engine** with automated verification and rollback protection.
+Tamimystic OS incorporates an enterprise-grade, fail-safe **Dual-Bank A/B Over-The-Air (OTA) Firmware Engine** (`os_ota`). This system enables wireless updates over Wi-Fi without taking the robot offline, backed by automated rollback protection to prevent bricking if an update contains a critical error.
 
 ---
 
-## A/B Dual-Bank Partitioning Architecture
+## Dual-Bank A/B Partition Architecture
 
-The 16MB flash layout divides firmware storage into two distinct 4.5MB application slots:
+The 16 MB flash memory is partitioned into two symmetrical 4.5 MB executable application slots (`ota_0` and `ota_1`) governed by the 8 KB `otadata` state partition:
 
 ```mermaid
 graph TD
-    subgraph 16MB Flash
-        OTA_DATA["otadata (8 KB) - Stores Active Slot Pointer and Rollback Flags"]
-        APP0["app0 (4.5 MB) - Active Running OS Firmware"]
-        APP1["app1 (4.5 MB) - Standby / Update Target Slot"]
+    subgraph Bootloader["2nd Stage Bootloader (0x00000000)"]
+        ReadState["Read Active State from otadata (0x0000F000)"]
+    end
+
+    subgraph AppPartitions["Dual Application Banks"]
+        SlotA["Slot A (ota_0: 0x00020000)<br/>4.5 MB - Currently Running (Active)"]
+        SlotB["Slot B (ota_1: 0x004A0000)<br/>4.5 MB - Staging Target (Passive)"]
+    end
+
+    ReadState -->|Active Slot == 0| SlotA
+    ReadState -->|Active Slot == 1| SlotB
+
+    subgraph OTAProcess["OTA Update Flow"]
+        Upload["Browser / REST Upload (tamimystic-os.bin)"] --> StreamFlash["Stream & Write into Passive Slot B"]
+        StreamFlash --> VerifySHA["Verify SHA-256 Checksum & Image Magic Byte"]
+        VerifySHA --> UpdateOTAData["Update otadata: Mark Slot B as PENDING_VERIFY"]
+        UpdateOTAData --> Reboot["Reboot SoC"]
     end
 ```
 
-### The Update Workflow:
-1. **Target Identification**: While running from `app0`, the OS routes incoming firmware writes to the standby partition `app1`.
-2. **Flash and Checksum Verification**: The update file is streamed over Wi-Fi, decrypted, and written block-by-block. The SHA-256 image checksum is verified.
-3. **Boot-Slot Switching**: If verified, the `otadata` register switches the boot pointer to `app1`.
-4. **Self-Testing and Rollback**: Upon first boot of the new firmware, the OS runs self-diagnostics. If a crash or bootloop occurs, the hardware automatically reverts to `app0` without bricking!
-
 ---
 
-## In-Browser Web OTA Update
+## Automatic Rollback State Machine
 
-1. Open the Web Dashboard (`http://<device-ip>/`).
-2. Scroll to the **Dual-Bank OTA Firmware Update** card.
-3. Choose your compiled `tamimystic_os.bin` file.
-4. Click **Upload and Flash OTA**.
-5. The device will upload, flash, verify, and reboot within 15 seconds.
+To protect robots operating in remote or inaccessible physical environments, the bootloader enforces a strict verification lifecycle:
 
----
-
-## CLI OTA Commands
-
-```bash
-# Check current active OTA boot slot and rollback armed status
-aeron> ota status
+```mermaid
+stateDiagram-v2
+    [*] --> VALID_APP: Normal Boot
+    VALID_APP --> WRITING_NEW_SLOT: Web / REST OTA Triggered
+    WRITING_NEW_SLOT --> PENDING_VERIFY: Flash Complete & Reboot
+    
+    state PENDING_VERIFY {
+        [*] --> RUN_DIAGNOSTICS
+        RUN_DIAGNOSTICS --> PASS_CHECK: Hardware & Drivers OK
+        RUN_DIAGNOSTICS --> FAIL_CRASH: Kernel Panic / Watchdog Timeout
+    }
+    
+    PASS_CHECK --> VALID_APP: Confirm (esp_ota_mark_app_valid)
+    FAIL_CRASH --> ROLLBACK: Automated Reboot
+    ROLLBACK --> VALID_APP: Boot into Previous Known-Good Slot
 ```
 
-### CLI Output:
-```text
-aeron> ota status
+### Self-Diagnostics Verification Sequence:
+1. On first boot of a new firmware version, `otadata` marks the application as `ESP_OTA_IMG_PENDING_VERIFY`.
+2. The kernel executes self-tests: initializes Octal PSRAM, starts 1000 Hz motion loop, validates sensor bus, and connects to Wi-Fi.
+3. If all tests pass within 10 seconds, the kernel invokes `esp_ota_mark_app_valid_cancel_rollback()`, cementing the update.
+4. If a kernel panic, memory corruption, or hardware watchdog reset occurs before validation, the bootloader immediately marks the slot as `ESP_OTA_IMG_INVALID` and boots back into the previous working slot.
 
-=== Dual-Bank OTA Subsystem Status ===
-  Running Firmware Partition: app0 (Slot 0)
-  Next OTA Target Partition:  app1 (Slot 1)
-  Flash Partition Size:       4.5 MB per bank
-  OTA Boot State:             VALIDATED (Rollback Armed)
-=====================================
+---
+
+## Method 1: Web Dashboard Drag-and-Drop OTA Portal
+
+1. Open your browser to `http://<device-ip>/` (or navigate directly to `http://<device-ip>/update`).
+2. Locate the **Firmware OTA Update** card.
+3. Drag and drop your compiled `tamimystic-os.bin` binary file.
+4. The dashboard displays a real-time progress bar with write speed and verified block CRC.
+5. Upon completion, the board reboots automatically and completes self-verification.
+
+---
+
+## Method 2: HTTP REST API Binary Streaming (`curl`)
+
+Deploy firmware updates directly from a terminal or CI/CD deployment script:
+
+```bash
+# Upload and flash firmware binary to passive slot
+curl -X POST \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary "@build/tamimystic-os.bin" \
+  http://192.168.1.150/api/ota/upload
+
+# Check OTA partition status
+curl http://192.168.1.150/api/ota/status
+```
+
+**Expected JSON Response:**
+```json
+{
+  "running_partition": "ota_0",
+  "boot_partition": "ota_0",
+  "next_update_partition": "ota_1",
+  "firmware_version": "v1.0.0",
+  "compile_time": "Sep 12 2026 14:20:10",
+  "chip_model": "ESP32-S3 (revision v0.2)",
+  "flash_size_bytes": 16777216,
+  "status": "IDLE"
+}
+```
+
+---
+
+## Method 3: Serial CLI OTA Management
+
+```bash
+# Query active OTA slots and version information
+tamimystic> ota status
+
+# Force manual rollback to the previous firmware partition
+tamimystic> ota rollback
+[OTA] Rolling back boot target to previous slot...
+[OTA] Rebooting into fallback firmware now.
 ```

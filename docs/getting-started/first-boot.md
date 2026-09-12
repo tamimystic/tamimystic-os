@@ -1,119 +1,158 @@
-# First Boot and Web Dashboard Walkthrough
+# First Boot and Web Dashboard
 
-Once flashing is complete, Tamimystic OS starts immediately upon reboot. This guide explains what happens during boot, how to connect to the serial console, and how to access the Web Dashboard.
+Upon flashing Tamimystic OS, the ESP32-S3 executes an automated hardware initialization sequence, starts all background real-time FreeRTOS daemon tasks, and spins up both the Serial CLI and the asynchronous HTTP/WebSocket Web Dashboard server.
 
 ---
 
-## 1. Serial Monitor Output (@ 115200 Baud)
+## Boot Sequence and Console Banner
 
-Open your favorite serial terminal (e.g., PuTTY, Arduino Serial Monitor, `idf.py monitor`, or VS Code Serial Monitor) and configure it to:
-* **Baud Rate**: `115200`
-* **Data Bits**: `8`
-* **Parity**: `None`
-* **Stop Bits**: `1`
+Connect a serial terminal client (e.g., PuTTY, Tera Term, Minicom, or `idf.py monitor`) to your device's USB port at **115200 baud** (8 data bits, no parity, 1 stop bit).
 
-You will see the official Tamimystic OS boot banner:
+During a normal startup, you will observe the following boot telemetry log:
 
 ```text
-=======================================================
-       TAMIMYSTIC OS - ESP32-S3 ULTRA PRO MAX          
-=======================================================
-[BOOT] Starting system bring-up sequence...
-[EVENT] Event Bus initialized.
-[SCHEDULER] Initializing FreeRTOS Scheduler (ESP32)...
-[CONFIG] Initializing NVS (Non-Volatile Storage)...
-[PNP] Initializing Plug & Play Hardware Engine...
-[PIN_MATRIX] Initialized with persistent NVS backing.
-[HAL_I2C] Master bus initialized on SDA=21, SCL=22 @ 400kHz.
+===================================================================
+  TAMIMYSTIC OS - Edge Robotics & AI Operating System v1.0.0
+  Target: ESP32-S3-N16R8 (Xtensa Dual-Core @ 240MHz)
+  Flash: 16MB Quad-SPI | PSRAM: 8MB Octal-SPI (Free: 8312 KB)
+===================================================================
+[INIT] [Core 0] Initializing Non-Volatile Storage (NVS)... [OK]
+[INIT] [Core 0] Loading Dynamic Pin Matrix configuration... [OK]
+[INIT] [Core 0] Scanning I2C Bus for Plug-and-Play sensors...
+       - Found MPU-6050 (6-DOF IMU) at 0x68 [ACTIVE]
+       - Found VL53L0X (Laser Distance) at 0x29 [ACTIVE]
+       - Found SSD1306 (128x64 OLED) at 0x3C [ACTIVE]
+       - Found PCA9685 (16-Ch PWM Servo) at 0x40 [ACTIVE]
+[INIT] [Core 1] Initializing 1000Hz Real-Time Motion PID Controller... [OK]
+[INIT] [Core 1] Initializing 6-DOF Inverse Kinematics Engine... [OK]
+[INIT] [Core 1] Initializing 2D LiDAR SLAM & A* Navigation Grid... [OK]
+[INIT] [Core 1] Initializing DVP Camera DMA Framebuffer (PSRAM)... [OK]
+[INIT] [Core 1] Initializing MobileNet INT8 Neural Vector Accelerator... [OK]
+[INIT] [Core 1] Initializing 16kHz I2S Audio Pipeline & KWS Engine... [OK]
+[INIT] [Core 0] Starting ESP-NOW Swarm Mesh Radio (Channel 1)... [OK]
+[INIT] [Core 0] Starting Wi-Fi Subsystem in AP+STA Dual-Mode...
+       - SoftAP SSID: Tamimystic-OS-AP
+       - SoftAP IP:   192.168.4.1
+[INIT] [Core 0] Starting HTTP REST Engine on port 80 (70 Handlers)... [OK]
+[INIT] [Core 0] Starting WebSocket Telemetry Server on /ws... [OK]
+[INIT] [Core 1] Initializing MicroPython Virtual Sandboxed Runtime... [OK]
 
-=======================================================
-  [PNP] Scanning I2C Bus (Addresses 0x08 - 0x77)...
-=======================================================
-  [+ FOUND] 0x68 | MPU-6050 [IMU / Motion] Signature Match!
-  [+ FOUND] 0x29 | VL53L0X [Distance / ToF] Signature Match!
-  [+ FOUND] 0x3C | SSD1306 [Display / OLED] Signature Match!
-  [+ FOUND] 0x40 | PCA9685 [Actuator Expander] Signature Match!
-=======================================================
-  [PNP] Scan complete. 4 hardware devices auto-configured.
-=======================================================
+Tamimystic OS Kernel Boot Completed in 482 ms.
+Type 'help' to list available CLI commands.
 
-[NET] Initializing ESP32 Network Manager...
-[STORAGE] Initializing 6.8MB LittleFS/SPIFFS Partition for ESP32-S3...
-[STORAGE] Flash VFS Mounted: Total: 6800 KB, Used: 48 KB
-[APPS] Initializing Dynamic Application & Scripting Engine...
-[PYTHON] Initializing MicroPython Native Bridge & Runtime...
-[WASM] Initializing WebAssembly Sandboxed Micro-Runtime...
-[ROBOTICS] Initializing Universal Robot Brain on Core 1...
-[SERVO] Auto-linked to PCA9685 16-Channel I2C Servo Expander at 0x40.
-[ROBOTICS] Universal Kinematics & Control Engine Active.
-[AI] Initializing TensorFlow Lite Micro & ESP-NN SIMD Neural Engine...
-[CAMERA] Initializing ESP32-S3 DVP Camera Driver with 8MB Octal PSRAM...
-[CAMERA] ESP32-S3 Hardware Camera Pipeline Initialized in PSRAM.
-[AI] Edge AI & Vision Pipeline Active on Core 1.
-[WEB] Starting ESP32 HTTP Server on Port 80...
-[WEB] Universal Robotics, Edge AI, Python IDE & File System endpoints active.
-[SYS] Received SYSTEM_BOOT event. System is fully UP & READY!
-
-aeron> 
+tamimystic>
 ```
 
 ---
 
-## 2. Connecting to the Web Dashboard
+## Network Connection Modes
 
-Tamimystic OS hosts a high-performance, asynchronous web application directly from flash:
-
-### Step 1: Connect Wi-Fi
-Using the serial CLI, connect the OS to your local Wi-Fi network:
-```bash
-aeron> wifi "MyHomeNetwork" "MySecretPassword"
-```
-The OS outputs:
-```text
-[NET] Connecting to Wi-Fi...
-[NET] Wi-Fi Connected. Got IP: 192.168.1.142
-[SYS] Network is now CONNECTED!
-```
-
-### Step 2: Open Dashboard in Browser
-Open your web browser (Chrome, Firefox, Safari, Edge) on your phone, tablet, or PC and navigate to:
-```text
-http://192.168.1.142/
-```
-
----
-
-## 3. Dashboard Features Overview
-
-The Web Dashboard is organized into 5 primary panels:
+Tamimystic OS operates in **AP+STA Concurrent Mode** out of the box:
 
 ```mermaid
 graph TD
-    DASH["Web Dashboard (http://&lt;device-ip&gt;/)"]
-    DASH --> P1["1. Robotics Command Center (Kinematics, D-Pad, 6-DOF Arm Sliders)"]
-    DASH --> P2["2. Edge AI Live Stream (MJPEG Camera View, Bounding Boxes, Model Selector)"]
-    DASH --> P3["3. Plug and Play Matrix (Live I2C Sensor List and Dynamic Pin Re-assignment)"]
-    DASH --> P4["4. In-Browser Python IDE (Code Editor, Live Console and 6.8MB File Manager)"]
-    DASH --> P5["5. Dual-Bank OTA Manager (Upload Firmware .bin and Rollback Monitor)"]
+    subgraph WiFiModes["Wi-Fi Subsystem"]
+        AP["Access Point (SoftAP)<br/>SSID: Tamimystic-OS-AP<br/>IP: 192.168.4.1"]
+        STA["Station Mode (STA)<br/>Connects to Home/Lab Wi-Fi<br/>Assigned DHCP IP (e.g. 192.168.1.150)"]
+    end
+
+    ClientLaptop["Engineer Laptop / Phone"] -->|Direct Connect| AP
+    ClientLaptop -->|LAN Router Connect| STA
+    AP --> DashboardEngine["Web Dashboard Engine (Port 80)"]
+    STA --> DashboardEngine
 ```
 
-1. **Universal Robotics**:
-   - Live D-Pad virtual joystick for Differential and Mecanum holonomic strafing.
-   - 6-DOF Robotic Arm joint angle sliders ($J_1 - J_6$) with real-time degree feedback.
-   - Interactive $(X, Y, Z)$ Cartesian Inverse Kinematics target input.
-   - Emergency Stop (E-Stop) and Safety Auto-Braking indicator.
-2. **Edge AI and Vision Stream**:
-   - Real-time video stream from OV2640 / OV3660 camera.
-   - Overlaid neural bounding boxes with class labels and confidence percentages.
-   - Model switcher (Person Detector, Object Detector, Lane Follower, Gesture Classifier).
-   - Auto-Follow Target toggle.
-3. **Plug and Play Hardware Matrix**:
-   - Interactive table showing all detected I2C sensors with physical addresses and status.
-   - Visual software pin matrix: Click any pin (e.g., `MOTOR_L_PWM` or `I2C_SDA`) and assign it to another GPIO without restarting.
-4. **Web Python IDE**:
-   - Full code editor with syntax highlighting.
-   - Direct execution button (`Run Script`) and `Stop` button.
-   - Live stdout console streaming print outputs in real-time.
-   - Flash file manager to view and delete files in the 6.8MB LittleFS partition.
-5. **Dual-Bank OTA**:
-   - Single-click binary firmware upload with automatic slot switching and rollback arming.
+### Mode 1: Direct SoftAP Connection (Out-of-the-Box)
+1. On your computer or mobile device, scan for Wi-Fi networks.
+2. Connect to the SSID: `Tamimystic-OS-AP`
+3. Enter the default WPA2 passphrase: `tamimystic123`
+4. Open any modern web browser and navigate to:
+   ```
+   http://192.168.4.1
+   ```
+
+### Mode 2: Connecting to an Existing Local Wi-Fi Network (Station Mode)
+To connect Tamimystic OS to your local Wi-Fi router for ROS 2 networking and internet access:
+
+#### Option A: Via Serial CLI
+```bash
+tamimystic> wifi connect "Your_SSID" "Your_Password"
+[WIFI] Connecting to 'Your_SSID'...
+[WIFI] Connected! Assigned IP: 192.168.1.150 (Gateway: 192.168.1.1)
+```
+
+#### Option B: Via HTTP REST API
+```bash
+curl -X POST "http://192.168.4.1/api/wifi/connect?ssid=Your_SSID&pass=Your_Password"
+```
+
+Once connected, you can access the Web Dashboard from any computer on your local network using the assigned IP (e.g., `http://192.168.1.150`).
+
+---
+
+## Web Dashboard 10-Subsystem Control Matrix
+
+The integrated Single-Page Web Dashboard (`index.html`) is served directly from Flash/ROM and communicates via high-frequency WebSockets (`ws://<device-ip>/ws`) and asynchronous REST endpoints:
+
+```
++----------------------------------------------------------------------------------------------------+
+|  TAMIMYSTIC OS - UNIFIED EMBEDDED DASHBOARD                                [Wi-Fi: 192.168.1.150]  |
++------------------------------------+-----------------------------------+---------------------------+
+| [CARD 1: SYSTEM TELEMETRY]         | [CARD 2: DYNAMIC PIN MATRIX]      | [CARD 3: PNP SENSORS]     |
+| - CPU0: 12% | CPU1: 28% @ 240MHz   | - I2C: SDA=21, SCL=22             | - MPU-6050: Pitch 0.2 deg |
+| - PSRAM Free: 7,842 KB / 8,192 KB  | - Motor Left: PWM=6, IN1=4, IN2=5 | - VL53L0X: 452 mm         |
+| - Uptime: 01:24:18 | Core Temp: 41C| - Status LED: GPIO 48             | - BME280: 26.4C, 1013 hPa |
++------------------------------------+-----------------------------------+---------------------------+
+| [CARD 4: ROBOTICS MOTION CONTROLLER| [CARD 5: 6-DOF ROBOTIC ARM IK]    | [CARD 6: ROS 2 MICRO-ROS] |
+| - Chassis: Mecanum / Diff Drive    | - Cartesian: X:150 Y:0 Z:120 mm   | - Agent: 192.168.1.100:888|
+| - Linear: 0.50 m/s | Ang: 0.2 rad/s| - Gripper: 45% (Closed)           | - Status: CONNECTED       |
+| - Virtual Joystick & E-STOP        | - J1..J6 Interactive Sliders      | - Topics: /cmd_vel, /odom |
++------------------------------------+-----------------------------------+---------------------------+
+| [CARD 7: 2D LIDAR SLAM NAVIGATION] | [CARD 8: DVP CAMERA & STREAM]     | [CARD 9: EDGE AI ENGINE]  |
+| - 80x80 Occupancy Grid Map Canvas  | - Live 30 FPS MJPEG Stream View   | - Model: MobileNet-V2 INT8|
+| - Pose: X:1.20m, Y:0.85m, Th:45deg | - Resolution: QQVGA / VGA         | - Inference: 18 ms (55FPS)|
+| - Global Path: A* Target Waypoint  | - Controls: Brightness/Contrast   | - Class: Person (94.2%)   |
++------------------------------------+-----------------------------------+---------------------------+
+| [CARD 10: ESP-NOW SWARM MESH]                                                                      |
+| - Mode: Swarm Master (Node ID: #1) | Active Peers: 3 Nodes Detected | Channel: 1                   |
+| - Peer 02: [SYNCED] RSSI: -48 dBm | Peer 03: [SYNCED] RSSI: -54 dBm | Formation: Wedge           |
++----------------------------------------------------------------------------------------------------+
+```
+
+---
+
+## Serial Console Interactive CLI
+
+Tamimystic OS provides an enterprise-grade command-line interface with parameter parsing, help documentation, and safety checks:
+
+```bash
+# Display all available kernel command categories
+tamimystic> help
+
+# Inspect hardware performance and memory allocations
+tamimystic> status
+
+# Query active sensor values
+tamimystic> sensor status
+
+# Drive robot forward at 0.5 m/s
+tamimystic> motion drive 0.5 0.0
+
+# Trigger emergency motion stop
+tamimystic> motion stop
+
+# Solve 6-DOF Inverse Kinematics for target coordinate
+tamimystic> arm ik 150.0 0.0 120.0 0.0 45.0 0.0
+
+# Run a live AI classification pass on current camera frame
+tamimystic> ai run
+
+# Scan for nearby ESP-NOW Swarm nodes
+tamimystic> espnow peers
+```
+
+---
+
+## Next Steps
+
+Now that your board is powered, connected to the network, and verified through both the Web Dashboard and Serial Console, proceed to the **[5-Minute Quickstart](quickstart.md)** to run your first autonomous robotics script and sensor data pipeline.
