@@ -142,7 +142,7 @@ All endpoints are available on Port 80 (ESP32) and Port 8080 (PC Simulator):
 ## Serial CLI Commands
 
 ```text
-aeron> espnow status
+tamimystic> espnow status
 === ESP-NOW 2.4GHz Radio & Swarm Mesh Status ===
   MAC Address      : 24:DC:C3:98:45:A0
   Wi-Fi Channel    : 1
@@ -156,15 +156,15 @@ aeron> espnow status
   Average Latency  : 2.1 ms
   Active Peers     : 2
 
-aeron> espnow peers
+tamimystic> espnow peers
 === Active ESP-NOW Mesh Peers (2) ===
   [0] MAC: 24:DC:C3:98:45:01 | RSSI: -52 dBm | Role: LEADER | Robot ID: 1 | Pose: (120.0, 80.0 cm)
   [1] MAC: 24:DC:C3:98:45:02 | RSSI: -60 dBm | Role: FOLLOWER | Robot ID: 2 | Pose: (60.0, 20.0 cm)
 
-aeron> espnow swarm follower 1 60.0
+tamimystic> espnow swarm follower 1 60.0
 [ESPNOW] Swarm Role Changed: FOLLOWER | Slot: 1 | Spacing: 60 cm
 
-aeron> espnow remote on
+tamimystic> espnow remote on
 [ESPNOW] Wireless Handheld Gamepad Remote Control ENABLED
 ```
 

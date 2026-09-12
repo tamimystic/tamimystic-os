@@ -33,7 +33,7 @@ graph TB
     subgraph Layer4["Application and Connectivity Layer"]
         UI["In-Browser Web IDE & Teleoperation Dashboard (Port 80)"]
         REST["HTTP REST API (70+ Endpoints)"]
-        CLI["Interactive Serial CLI (aeron> 115200 Baud)"]
+        CLI["Interactive Serial CLI (tamimystic> 115200 Baud)"]
         PY["MicroPython Engine & WebAssembly VM"]
         ROS2["micro-ROS XRCE-DDS Client (6 Topics)"]
         MESH["ESP-NOW Swarm Mesh (< 4ms RF Latency)"]
@@ -143,8 +143,8 @@ docs/
 │   ├── web-ide.md                  # In-browser IDE, VFS file manager, and editor
 │   └── ota-updates.md              # Dual-bank OTA firmware update state machine
 ├── reference/
-│   ├── cli.md                      # Serial CLI command manual (aeron>)
-│   └── rest-api.md                 # HTTP REST API endpoints and JSON schemas
+│   ├── cli.md                      # Serial CLI command manual (tamimystic>)
+│   └── rest-api.md                 # REST API reference (70+ endpoints) and JSON schemas
 ├── development/
 │   ├── build.md                    # Building from source on PC and ESP32-S3
 │   └── cicd.md                     # GitHub Actions workflow and automated testing
